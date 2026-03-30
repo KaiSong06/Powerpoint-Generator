@@ -3,33 +3,38 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MIGRATION_FILE="$ROOT_DIR/supabase/migrations/001_initial_schema.sql"
+SEED_FILE="$ROOT_DIR/backend/seed.sql"
 
-echo "=== Envirotech PowerPoint Generator — Seed Database ==="
+echo "=== Envirotech PowerPoint Generator — Database Setup ==="
 echo ""
 
-if [ ! -f "$MIGRATION_FILE" ]; then
-  echo "Error: Migration file not found at $MIGRATION_FILE"
-  exit 1
-fi
-
 # Try to read DATABASE_URL from backend/.env
+DB_URL=""
 if [ -f "$ROOT_DIR/backend/.env" ]; then
-  DB_URL=$(grep -E "^SUPABASE_DB_URL=" "$ROOT_DIR/backend/.env" | cut -d '=' -f2-)
+  DB_URL=$(grep -E "^SUPABASE_DB_URL=" "$ROOT_DIR/backend/.env" | cut -d '=' -f2- || true)
 fi
 
-if [ -n "${DB_URL:-}" ] && command -v psql &>/dev/null; then
-  echo "Running migration against database..."
+if [ -n "$DB_URL" ] && command -v psql &>/dev/null; then
+  echo "Running migration..."
   psql "$DB_URL" -f "$MIGRATION_FILE"
+  echo "✓ Schema created"
   echo ""
-  echo "✓ Migration applied successfully"
+
+  if [ -f "$SEED_FILE" ]; then
+    echo "Seeding data..."
+    psql "$DB_URL" -f "$SEED_FILE"
+    echo "✓ Seed data loaded (consultants + products)"
+  fi
+
+  echo ""
+  echo "=== Database setup complete ==="
 else
-  echo "To apply the database schema, run the following SQL in your Supabase dashboard"
-  echo "(SQL Editor → New Query):"
+  echo "To set up the database automatically, install psql and set SUPABASE_DB_URL"
+  echo "in backend/.env. Then re-run this script."
   echo ""
-  echo "--- File: supabase/migrations/001_initial_schema.sql ---"
-  cat "$MIGRATION_FILE"
+  echo "Alternatively, run these SQL files manually in the Supabase SQL Editor:"
+  echo "  1. supabase/migrations/001_initial_schema.sql  (schema)"
+  echo "  2. backend/seed.sql                            (test data)"
   echo ""
-  echo "---"
-  echo ""
-  echo "Tip: Install psql and set SUPABASE_DB_URL in backend/.env to run this automatically."
+  echo "See docs/SUPABASE_SETUP.md for detailed instructions."
 fi
