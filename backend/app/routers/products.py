@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..database import fetch_all, fetch_one
+from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.product import ProductCreate, ProductOut
 
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -50,7 +51,7 @@ async def get_product(product_code: str):
 
 
 @router.post("", response_model=ProductOut, status_code=201)
-async def create_product(body: ProductCreate):
+async def create_product(body: ProductCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         """INSERT INTO products (product_code, name, specifications, image_url, price, markup_percent, category)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -67,7 +68,7 @@ async def create_product(body: ProductCreate):
 
 
 @router.put("/{product_code}", response_model=ProductOut)
-async def update_product(product_code: str, body: ProductCreate):
+async def update_product(product_code: str, body: ProductCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         """UPDATE products SET name = $1, specifications = $2, image_url = $3, price = $4, markup_percent = $5, category = $6
            WHERE product_code = $7

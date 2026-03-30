@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from ..database import execute, fetch_all, fetch_one
+from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantCreate, ConsultantOut
 
 router = APIRouter(prefix="/api/consultants", tags=["consultants"])
@@ -24,7 +25,7 @@ async def get_consultant(consultant_id: int):
 
 
 @router.post("", response_model=ConsultantOut, status_code=201)
-async def create_consultant(body: ConsultantCreate):
+async def create_consultant(body: ConsultantCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         "INSERT INTO consultants (name, email, phone) VALUES ($1, $2, $3) RETURNING id, name, email, phone",
         body.name,
@@ -35,7 +36,7 @@ async def create_consultant(body: ConsultantCreate):
 
 
 @router.put("/{consultant_id}", response_model=ConsultantOut)
-async def update_consultant(consultant_id: int, body: ConsultantCreate):
+async def update_consultant(consultant_id: int, body: ConsultantCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         "UPDATE consultants SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING id, name, email, phone",
         body.name,

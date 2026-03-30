@@ -1,10 +1,11 @@
 import json
 import uuid
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
 from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
+from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantOut
 from ..schemas.presentation import PresentationDetail, PresentationOut
 from ..schemas.product import ProductOut
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/api/presentations", tags=["presentations"])
 async def list_presentations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
+    _user: AuthUser = Depends(get_current_user),
 ):
     offset = (page - 1) * per_page
     rows = await fetch_all(
@@ -32,7 +34,7 @@ async def list_presentations(
 
 
 @router.get("/{presentation_id}", response_model=PresentationDetail)
-async def get_presentation(presentation_id: int):
+async def get_presentation(presentation_id: int, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         """SELECT id, file_url, file_name, client_name, office_address, product_count,
                   sq_ft, generated_at, suite_number, floor_plan_url, consultant_id
@@ -75,9 +77,10 @@ async def generate_presentation_endpoint(
     office_address: str = Form(...),
     suite_number: str = Form(None),
     sq_ft: int = Form(...),
-    consultant_id: int = Form(...),
+    consultant_id: int | None = Form(None),
     products: str = Form(..., description='JSON array: [{"product_code": "...", "quantity": 1}]'),
     floor_plan: UploadFile | None = File(None),
+    user: AuthUser = Depends(get_current_user),
 ):
     """Create a presentation, generate the PPTX, and upload to storage."""
     # Parse products JSON
@@ -103,6 +106,19 @@ async def generate_presentation_endpoint(
             status_code=400,
             detail=f"Product codes not found: {', '.join(missing)}",
         )
+
+    # Auto-detect consultant from auth user email if not explicitly provided
+    if consultant_id is None:
+        c_row = await fetch_one(
+            "SELECT id FROM consultants WHERE email = $1",
+            user.email,
+        )
+        if not c_row:
+            raise HTTPException(
+                status_code=400,
+                detail="No consultant_id provided and no consultant matches your email",
+            )
+        consultant_id = c_row["id"]
 
     # Upload floor plan if provided
     floor_plan_url = None
@@ -164,7 +180,7 @@ async def generate_presentation_endpoint(
 
 
 @router.delete("/{presentation_id}", status_code=204)
-async def delete_presentation(presentation_id: int):
+async def delete_presentation(presentation_id: int, _user: AuthUser = Depends(get_current_user)):
     result = await execute(
         "DELETE FROM presentations WHERE id = $1",
         presentation_id,
