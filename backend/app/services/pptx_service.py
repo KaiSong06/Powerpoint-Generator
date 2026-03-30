@@ -54,22 +54,22 @@ async def generate_presentation(presentation_id: int) -> str:
         presentation_id,
     )
 
-    # 4. Compute display prices and totals
+    # 4. Compute totals (markup applied) and build product list in snake_case
     products_payload = []
     total_cost = Decimal("0")
     for row in product_rows:
         markup = row["markup_percent"] or Decimal("0")
-        display_price = row["price"] * (1 + markup / 100)
-        extended = display_price * row["quantity"]
+        marked_up_price = row["price"] * (1 + markup / 100)
+        extended = marked_up_price * row["quantity"]
         total_cost += extended
         products_payload.append({
-            "productCode": row["product_code"],
+            "product_code": row["product_code"],
             "name": row["name"],
             "specifications": row["specifications"],
-            "imageUrl": row["image_url"],
-            "price": display_price,
+            "image_url": row["image_url"],
+            "price": row["price"],
+            "markup_percent": row["markup_percent"],
             "quantity": row["quantity"],
-            "extended": extended,
             "category": row["category"],
         })
 

@@ -5,6 +5,7 @@ const PptxGenJS = require("pptxgenjs");
 const { SLIDE } = require("./theme");
 const { generateCover } = require("./slides/cover");
 const { generatePricing } = require("./slides/pricing");
+const { addProductSlides } = require("./slides/products");
 const { generateThankYou } = require("./slides/thankYou");
 
 // ── Required top-level fields ───────────────────────────────────────────────
@@ -76,10 +77,9 @@ async function main() {
   generatePricing(pres, payload);
   process.stderr.write("[pptx-engine] Generated: Pricing slide\n");
 
-  // TODO: const { addProductSlides } = require("./slides/products");
-  //       addProductSlides(pres, payload);
+  addProductSlides(pres, payload);
   process.stderr.write(
-    `[pptx-engine] Would generate: Product slides for ${payload.products.length} product(s)\n`
+    `[pptx-engine] Generated: Product slides for ${payload.products.length} product(s)\n`
   );
 
   generateThankYou(pres, payload);
