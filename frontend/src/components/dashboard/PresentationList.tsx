@@ -29,8 +29,8 @@ export default function PresentationList({
     }
 
     result.sort((a, b) => {
-      const dateA = new Date(a.generated_at).getTime();
-      const dateB = new Date(b.generated_at).getTime();
+      const dateA = a.generated_at ? new Date(a.generated_at).getTime() : 0;
+      const dateB = b.generated_at ? new Date(b.generated_at).getTime() : 0;
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
@@ -89,14 +89,13 @@ export default function PresentationList({
 }
 
 function PresentationCard({ presentation }: { presentation: Presentation }) {
-  const date = new Date(presentation.generated_at).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }
-  );
+  const date = presentation.generated_at
+    ? new Date(presentation.generated_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
 
   return (
     <div className="bg-white rounded-lg shadow-sm border-l-4 border-l-envirotech-red border border-gray-200 p-5 hover:shadow-md transition-shadow">

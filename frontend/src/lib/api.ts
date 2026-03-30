@@ -3,6 +3,7 @@ import type {
   Product,
   Consultant,
   Presentation,
+  PresentationProduct,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -71,6 +72,12 @@ export async function getPresentations(): Promise<Presentation[]> {
 
 export async function getPresentation(id: number): Promise<Presentation> {
   return apiFetch<Presentation>(`/api/presentations/${id}`);
+}
+
+export async function getPresentationProducts(
+  id: number
+): Promise<PresentationProduct[]> {
+  return apiFetch<PresentationProduct[]>(`/api/presentations/${id}/products`);
 }
 
 export async function deletePresentation(id: number): Promise<void> {

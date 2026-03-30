@@ -3,12 +3,9 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import {
-  getPresentation,
-  getPresentationProducts,
-  deletePresentation,
-} from "@/lib/api";
-import type { Presentation, PresentationProduct } from "@/lib/types";
+import { getPresentation, deletePresentation } from "@/lib/api";
+import type { Presentation } from "@/lib/types";
+import { CATEGORY_LABELS, type ProductCategory } from "@/lib/types";
 
 export default function PresentationDetailPage({
   params,
@@ -20,7 +17,6 @@ export default function PresentationDetailPage({
   const { isLoading: authLoading, user } = useAuth();
 
   const [presentation, setPresentation] = useState<Presentation | null>(null);
-  const [products, setProducts] = useState<PresentationProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -36,11 +32,8 @@ export default function PresentationDetailPage({
       return;
     }
 
-    Promise.all([getPresentation(numId), getPresentationProducts(numId)])
-      .then(([pres, prods]) => {
-        setPresentation(pres);
-        setProducts(prods);
-      })
+    getPresentation(numId)
+      .then(setPresentation)
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [id, authLoading, user]);
@@ -84,16 +77,17 @@ export default function PresentationDetailPage({
 
   if (!presentation) return null;
 
-  const date = new Date(presentation.generated_at).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }
-  );
+  const date = presentation.generated_at
+    ? new Date(presentation.generated_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+  const products = presentation.products || [];
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -121,7 +115,6 @@ export default function PresentationDetailPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <Detail label="Address" value={presentation.office_address} />
             <Detail label="Suite" value={presentation.suite_number} />
-            <Detail label="Category" value={presentation.category} />
             <Detail
               label="Square Footage"
               value={
@@ -131,14 +124,19 @@ export default function PresentationDetailPage({
               }
             />
             <Detail
-              label="Product Count"
+              label="Products"
               value={presentation.product_count?.toString()}
             />
-            <Detail label="Generated" value={date} />
+            {presentation.consultant && (
+              <Detail
+                label="Consultant"
+                value={`${presentation.consultant.name} (${presentation.consultant.email})`}
+              />
+            )}
           </div>
         </div>
 
-        {/* Products */}
+        {/* Products Table */}
         {products.length > 0 && (
           <div className="px-6 py-5 border-b border-gray-200">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -148,29 +146,56 @@ export default function PresentationDetailPage({
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 font-semibold text-gray-700">
-                    Product Code
+                    Product
+                  </th>
+                  <th className="text-left py-2 font-semibold text-gray-700">
+                    Category
                   </th>
                   <th className="text-right py-2 font-semibold text-gray-700">
-                    Quantity
+                    Price
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product, i) => (
                   <tr
-                    key={product.id}
+                    key={product.product_code}
                     className={i % 2 === 1 ? "bg-gray-50" : ""}
                   >
                     <td className="py-2 text-gray-800">
-                      {product.product_code}
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {product.product_code}
+                      </div>
+                    </td>
+                    <td className="py-2 text-gray-600">
+                      {CATEGORY_LABELS[product.category as ProductCategory] ||
+                        product.category ||
+                        "—"}
                     </td>
                     <td className="py-2 text-right text-gray-800">
-                      {product.quantity}
+                      ${product.price.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                      })}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Floor Plan */}
+        {presentation.floor_plan_url && (
+          <div className="px-6 py-5 border-b border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Floor Plan
+            </h2>
+            <img
+              src={presentation.floor_plan_url}
+              alt="Floor plan"
+              className="max-h-48 rounded"
+            />
           </div>
         )}
 

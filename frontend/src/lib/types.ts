@@ -46,6 +46,7 @@ export interface Presentation {
   id: number;
   file_url: string | null;
   file_name: string | null;
+  category?: string | null;
   client_name: string;
   office_address: string;
   product_count: number | null;
@@ -55,4 +56,20 @@ export interface Presentation {
   floor_plan_url?: string | null;
   consultant?: Consultant | null;
   products?: Product[];
+}
+
+export interface PresentationProduct {
+  id: number;
+  presentation_id: number;
+  product_code: string;
+  quantity: number;
+}
+
+export interface CreatePresentationRequest {
+  client_name: string;
+  office_address: string;
+  suite_number?: string;
+  sq_ft: number;
+  consultant_id?: number;
+  products: { product_code: string; quantity: number }[];
 }
