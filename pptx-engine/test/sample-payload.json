@@ -1,0 +1,48 @@
+{
+  "outputPath": "test/output.pptx",
+  "coverImagePath": "test/placeholder-office.png",
+  "clientName": "Acme Corporation",
+  "officeAddress": "123 Innovation Drive, Austin, TX 78701",
+  "suiteNumber": "Suite 400",
+  "sqFt": 12500,
+  "date": "2026-03-30",
+  "consultant": {
+    "name": "Jane Smith",
+    "email": "jane.smith@envirotech.com",
+    "phone": "(512) 555-0199"
+  },
+  "products": [
+    {
+      "product_code": "WS-001",
+      "name": "Height Adjustable Workbench",
+      "category": "workstation",
+      "specifications": "Electric sit-stand, 60\"W x 30\"D, laminate top",
+      "image_url": "",
+      "display_price": "$1,250.00",
+      "quantity": 20,
+      "extended_price": "$25,000.00"
+    },
+    {
+      "product_code": "TS-002",
+      "name": "Ergonomic Task Chair",
+      "category": "task_seating",
+      "specifications": "Mesh back, adjustable arms, lumbar support",
+      "image_url": "",
+      "display_price": "$450.00",
+      "quantity": 20,
+      "extended_price": "$9,000.00"
+    },
+    {
+      "product_code": "MT-003",
+      "name": "Conference Table 8ft",
+      "category": "meeting",
+      "specifications": "Boat-shaped, power/data grommets, seats 8",
+      "image_url": "",
+      "display_price": "$2,800.00",
+      "quantity": 2,
+      "extended_price": "$5,600.00"
+    }
+  ],
+  "totalCost": 39600,
+  "costPerSqFt": 3.17
+}

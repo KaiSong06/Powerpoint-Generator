@@ -3,6 +3,8 @@
 
 const PptxGenJS = require("pptxgenjs");
 const { SLIDE } = require("./theme");
+const { generateCover } = require("./slides/cover");
+const { generateThankYou } = require("./slides/thankYou");
 
 // ── Required top-level fields ───────────────────────────────────────────────
 const REQUIRED_FIELDS = [
@@ -66,10 +68,9 @@ async function main() {
   pres.defineLayout({ name: "ENVIROTECH", width: SLIDE.W, height: SLIDE.H });
   pres.layout = "ENVIROTECH";
 
-  // 4. Generate slides (stubs — will be implemented in Phase 2)
-  // TODO: const { addCoverSlide } = require("./slides/cover");
-  //       addCoverSlide(pres, payload);
-  process.stderr.write("[pptx-engine] Would generate: Cover slide\n");
+  // 4. Generate slides
+  generateCover(pres, payload);
+  process.stderr.write("[pptx-engine] Generated: Cover slide\n");
 
   // TODO: const { addPricingSlide } = require("./slides/pricing");
   //       addPricingSlide(pres, payload);
@@ -81,8 +82,8 @@ async function main() {
     `[pptx-engine] Would generate: Product slides for ${payload.products.length} product(s)\n`
   );
 
-  // TODO: Thank You slide
-  process.stderr.write("[pptx-engine] Would generate: Thank You slide\n");
+  generateThankYou(pres, payload);
+  process.stderr.write("[pptx-engine] Generated: Thank You slide\n");
 
   // 5. Write file
   await pres.writeFile({ fileName: payload.outputPath });
