@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Next.js
+.next/
+out/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+.env.local
+
+# Generated
+*.pptx
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
