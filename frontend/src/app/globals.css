@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-envirotech-red: #E31B23;
+  --color-envirotech-charcoal: #2D2D2D;
+  --color-envirotech-gray-light: #F5F5F5;
+  --color-background: #ffffff;
+  --color-foreground: #333333;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Calibri", "Arial", sans-serif;
+}
