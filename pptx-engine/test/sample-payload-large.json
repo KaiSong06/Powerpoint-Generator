@@ -1,0 +1,33 @@
+{
+  "outputPath": "test/output-large.pptx",
+  "coverImagePath": "test/placeholder-office.png",
+  "clientName": "Acme Corporation",
+  "officeAddress": "123 Innovation Drive, Austin, TX 78701",
+  "suiteNumber": "Suite 400",
+  "sqFt": 25000,
+  "date": "2026-03-30",
+  "consultant": {
+    "name": "Jane Smith",
+    "email": "jane.smith@envirotech.com",
+    "phone": "(512) 555-0199"
+  },
+  "products": [
+    { "product_code": "WS-001", "name": "Height Adjustable Workbench", "category": "workstation", "specifications": "Electric sit-stand, 60\"W x 30\"D", "image_url": "", "display_price": "$1,250.00", "quantity": 20, "extended_price": "$25,000.00" },
+    { "product_code": "TS-002", "name": "Ergonomic Task Chair", "category": "task_seating", "specifications": "Mesh back, adjustable arms", "image_url": "", "display_price": "$450.00", "quantity": 20, "extended_price": "$9,000.00" },
+    { "product_code": "MT-003", "name": "Conference Table 8ft", "category": "meeting", "specifications": "Boat-shaped, power grommets", "image_url": "", "display_price": "$2,800.00", "quantity": 2, "extended_price": "$5,600.00" },
+    { "product_code": "LG-004", "name": "Lounge Sofa 3-Seat", "category": "lounge", "specifications": "Fabric upholstery, walnut legs", "image_url": "", "display_price": "$1,800.00", "quantity": 4, "extended_price": "$7,200.00" },
+    { "product_code": "RC-005", "name": "Reception Desk L-Shape", "category": "reception", "specifications": "72\"W, transaction counter", "image_url": "", "display_price": "$3,200.00", "quantity": 1, "extended_price": "$3,200.00" },
+    { "product_code": "ST-006", "name": "Mobile Pedestal 3-Drawer", "category": "storage", "specifications": "Steel, keyed lock", "image_url": "", "display_price": "$320.00", "quantity": 20, "extended_price": "$6,400.00" },
+    { "product_code": "TB-007", "name": "Café Height Table 36\"", "category": "table", "specifications": "Round, laminate top, chrome base", "image_url": "", "display_price": "$550.00", "quantity": 6, "extended_price": "$3,300.00" },
+    { "product_code": "AC-008", "name": "Monitor Arm Dual", "category": "accessory", "specifications": "Clamp mount, VESA 75/100", "image_url": "", "display_price": "$185.00", "quantity": 20, "extended_price": "$3,700.00" },
+    { "product_code": "PB-009", "name": "Phone Booth Solo", "category": "phone_booth", "specifications": "Acoustic pod, ventilated", "image_url": "", "display_price": "$4,500.00", "quantity": 3, "extended_price": "$13,500.00" },
+    { "product_code": "GM-010", "name": "Gaming Desk 72\"", "category": "gaming", "specifications": "Carbon fiber top, LED edge", "image_url": "", "display_price": "$980.00", "quantity": 4, "extended_price": "$3,920.00" },
+    { "product_code": "PL-011", "name": "Planter Box Large", "category": "planter", "specifications": "Fiberglass, 48\"L x 12\"W", "image_url": "", "display_price": "$275.00", "quantity": 8, "extended_price": "$2,200.00" },
+    { "product_code": "TS-012", "name": "Side Chair Stackable", "category": "task_seating", "specifications": "Polypropylene shell, chrome sled", "image_url": "", "display_price": "$195.00", "quantity": 12, "extended_price": "$2,340.00" },
+    { "product_code": "MT-013", "name": "Training Table Flip-Top", "category": "meeting", "specifications": "60\"W x 24\"D, nesting", "image_url": "", "display_price": "$620.00", "quantity": 8, "extended_price": "$4,960.00" },
+    { "product_code": "LG-014", "name": "Ottoman Round", "category": "lounge", "specifications": "Upholstered, 24\" diameter", "image_url": "", "display_price": "$380.00", "quantity": 6, "extended_price": "$2,280.00" },
+    { "product_code": "AC-015", "name": "Cable Management Tray", "category": "accessory", "specifications": "Under-desk, 48\" steel", "image_url": "", "display_price": "$85.00", "quantity": 20, "extended_price": "$1,700.00" }
+  ],
+  "totalCost": 94300,
+  "costPerSqFt": 3.77
+}
