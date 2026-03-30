@@ -91,11 +91,13 @@ export default function ProductSelectStep({
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search products"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
+              aria-label="Filter by category"
               className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
             >
               <option value="">All Categories</option>
@@ -107,10 +109,32 @@ export default function ProductSelectStep({
             </select>
           </div>
 
+          {products.length === 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
+              No products in catalog. Please add products before creating a
+              presentation.
+            </div>
+          )}
+
           <div className="max-h-[28rem] overflow-y-auto space-y-2">
-            {filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 && products.length > 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">
+                  No products match your search.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategoryFilter("");
+                  }}
+                  className="mt-2 text-envirotech-red text-xs font-medium hover:underline"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <p className="text-center text-gray-500 py-8 text-sm">
-                No products found.
+                No products available.
               </p>
             ) : (
               filteredProducts.map((product) => {
@@ -203,7 +227,8 @@ export default function ProductSelectStep({
                       onClick={() =>
                         updateQuantity(sp.product_code, sp.quantity - 1)
                       }
-                      className="w-7 h-7 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center text-sm font-bold"
+                      aria-label={`Decrease quantity of ${sp.product.name}`}
+                      className="w-8 h-8 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center text-sm font-bold"
                     >
                       -
                     </button>
@@ -214,7 +239,8 @@ export default function ProductSelectStep({
                       onClick={() =>
                         updateQuantity(sp.product_code, sp.quantity + 1)
                       }
-                      className="w-7 h-7 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center text-sm font-bold"
+                      aria-label={`Increase quantity of ${sp.product.name}`}
+                      className="w-8 h-8 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center text-sm font-bold"
                     >
                       +
                     </button>
@@ -222,7 +248,7 @@ export default function ProductSelectStep({
                   <button
                     onClick={() => removeProduct(sp.product_code)}
                     className="text-red-400 hover:text-red-600 text-sm ml-1 flex-shrink-0"
-                    title="Remove"
+                    aria-label={`Remove ${sp.product.name}`}
                   >
                     {"\u2715"}
                   </button>

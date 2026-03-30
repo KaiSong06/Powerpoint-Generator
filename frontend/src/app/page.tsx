@@ -6,6 +6,7 @@ import { getPresentations } from "@/lib/api";
 import PresentationList from "@/components/dashboard/PresentationList";
 import Link from "next/link";
 import type { Presentation } from "@/lib/types";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -23,11 +24,7 @@ export default function DashboardPage() {
   }, [authLoading, user]);
 
   if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -46,7 +43,20 @@ export default function DashboardPage() {
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
-          Failed to load presentations: {error}
+          <p>Failed to load presentations: {error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setIsLoading(true);
+              getPresentations()
+                .then(setPresentations)
+                .catch((err) => setError(err.message))
+                .finally(() => setIsLoading(false));
+            }}
+            className="mt-2 text-red-800 font-medium underline text-xs"
+          >
+            Try again
+          </button>
         </div>
       )}
 

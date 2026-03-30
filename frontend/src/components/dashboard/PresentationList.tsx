@@ -61,11 +61,13 @@ export default function PresentationList({
           placeholder="Search by client name or address..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search presentations"
           className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
         />
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+          aria-label="Sort order"
           className="px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
         >
           <option value="newest">Newest first</option>

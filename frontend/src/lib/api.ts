@@ -8,6 +8,43 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
+function isRetryable(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok || !isRetryable(response.status)) {
+        return response;
+      }
+      lastError = new Error(`API error ${response.status}`);
+    } catch (err) {
+      // Network error (offline, DNS failure, etc.) — retryable
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+
+    if (attempt < MAX_RETRIES) {
+      await sleep(RETRY_DELAY_MS * 2 ** attempt);
+    }
+  }
+
+  throw lastError ?? new Error("Request failed after retries");
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const supabase = createSupabaseBrowserClient();
   const {
@@ -33,7 +70,7 @@ async function apiFetch<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchWithRetry(`${API_URL}${path}`, {
     ...options,
     headers,
   });
@@ -107,11 +144,14 @@ export async function generatePresentation(data: {
   formData.append("products", JSON.stringify(data.products));
   if (data.floor_plan) formData.append("floor_plan", data.floor_plan);
 
-  const response = await fetch(`${API_URL}/api/presentations/generate`, {
-    method: "POST",
-    headers: authHeaders,
-    body: formData,
-  });
+  const response = await fetchWithRetry(
+    `${API_URL}/api/presentations/generate`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: formData,
+    }
+  );
 
   if (!response.ok) {
     const errorBody = await response.text();

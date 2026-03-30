@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { getPresentation, deletePresentation } from "@/lib/api";
 import type { Presentation } from "@/lib/types";
 import { CATEGORY_LABELS, type ProductCategory } from "@/lib/types";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 
 export default function PresentationDetailPage({
   params,
@@ -52,11 +53,7 @@ export default function PresentationDetailPage({
   };
 
   if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (error) {
