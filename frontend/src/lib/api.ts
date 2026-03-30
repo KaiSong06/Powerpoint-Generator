@@ -3,6 +3,7 @@ import type {
   Product,
   Consultant,
   Presentation,
+  PresentationProduct,
   CreatePresentationRequest,
 } from "./types";
 
@@ -62,4 +63,14 @@ export async function getPresentations(): Promise<Presentation[]> {
 
 export async function getPresentation(id: number): Promise<Presentation> {
   return apiFetch<Presentation>(`/presentations/${id}`);
+}
+
+export async function getPresentationProducts(
+  id: number
+): Promise<PresentationProduct[]> {
+  return apiFetch<PresentationProduct[]>(`/presentations/${id}/products`);
+}
+
+export async function deletePresentation(id: number): Promise<void> {
+  await apiFetch<void>(`/presentations/${id}`, { method: "DELETE" });
 }
