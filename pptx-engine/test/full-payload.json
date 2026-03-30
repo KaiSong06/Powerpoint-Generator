@@ -1,0 +1,248 @@
+{
+  "outputPath": "test/output-full.pptx",
+  "coverImagePath": "test/placeholder-office.png",
+  "clientName": "Meridian Financial Group",
+  "officeAddress": "4500 Preston Road, Dallas, TX 75205",
+  "suiteNumber": "Suite 1200",
+  "sqFt": 15000,
+  "date": "2026-03-30",
+  "consultant": {
+    "name": "Sarah Mitchell",
+    "email": "sarah.mitchell@envirotech.com",
+    "phone": "(214) 555-0187"
+  },
+  "products": [
+    {
+      "product_code": "WS-100",
+      "name": "Height Adjustable Workbench L-Shape",
+      "category": "workstation",
+      "specifications": "Electric sit-stand 46\"-72\", 72\"W x 30\"D L-configuration, Programmable 4-preset controller, Integrated cable tray, 350 lb lift capacity, Anti-collision sensor",
+      "image_url": "",
+      "price": 950,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "TS-200",
+      "name": "Ergonomic Task Chair Pro",
+      "category": "task_seating",
+      "specifications": "Mesh back with lumbar support, 4D adjustable arms, Synchro-tilt mechanism, Seat depth adjustment, 275 lb capacity, BIFMA certified",
+      "image_url": "",
+      "price": 340,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "TS-201",
+      "name": "Conference Chair Mesh Back",
+      "category": "task_seating",
+      "specifications": "Mid-back mesh, Fixed polished arms, Swivel base, Seat height adjustment, Stacking capability",
+      "image_url": "",
+      "price": 280,
+      "markup_percent": 30,
+      "quantity": 9
+    },
+    {
+      "product_code": "TS-202",
+      "name": "Bar Stool Adjustable Height",
+      "category": "task_seating",
+      "specifications": "Pneumatic height 24\"-32\", Polypropylene seat, Chrome footring, 360° swivel, 250 lb capacity",
+      "image_url": "",
+      "price": 195,
+      "markup_percent": 30,
+      "quantity": 3
+    },
+    {
+      "product_code": "TS-203",
+      "name": "Guest Chair Sled Base",
+      "category": "task_seating",
+      "specifications": "Chrome sled base, Upholstered seat and back, Stackable up to 4 high, Wall-saver frame, COM/COL available",
+      "image_url": "",
+      "price": 165,
+      "markup_percent": 30,
+      "quantity": 6
+    },
+    {
+      "product_code": "MT-300",
+      "name": "Conference Table 8ft Boat Shape",
+      "category": "meeting",
+      "specifications": "96\"W x 48\"D boat shape, Thermofused laminate top, Power/data grommets x2, Cable management trough, 1.25\" thick top, T-base steel legs",
+      "image_url": "",
+      "price": 2100,
+      "markup_percent": 30,
+      "quantity": 1
+    },
+    {
+      "product_code": "MT-301",
+      "name": "Training Table Flip-Top 60\"",
+      "category": "meeting",
+      "specifications": "60\"W x 24\"D flip-top, Nesting capability, Locking casters, Modesty panel, T-leg base",
+      "image_url": "",
+      "price": 480,
+      "markup_percent": 30,
+      "quantity": 4
+    },
+    {
+      "product_code": "LG-400",
+      "name": "Lounge Chair Modern Arm",
+      "category": "lounge",
+      "specifications": "Solid oak frame, High-resilience foam, Grade A fabric upholstery, 32\"W x 30\"D x 33\"H, 300 lb capacity",
+      "image_url": "",
+      "price": 1350,
+      "markup_percent": 30,
+      "quantity": 4
+    },
+    {
+      "product_code": "LG-401",
+      "name": "Ottoman Round 24\"",
+      "category": "lounge",
+      "specifications": "24\" diameter, Upholstered top, Walnut veneer base, Matches LG-400 series, 250 lb capacity",
+      "image_url": "",
+      "price": 290,
+      "markup_percent": 30,
+      "quantity": 3
+    },
+    {
+      "product_code": "RC-500",
+      "name": "Reception Desk L-Shape with Transaction Counter",
+      "category": "reception",
+      "specifications": "72\"W x 30\"D main surface, ADA-compliant transaction counter, Full modesty panel, 2 box/file pedestals, Integrated wire management, Thermofused laminate",
+      "image_url": "",
+      "price": 2450,
+      "markup_percent": 30,
+      "quantity": 1
+    },
+    {
+      "product_code": "ST-600",
+      "name": "Mobile Pedestal 3-Drawer",
+      "category": "storage",
+      "specifications": "Box/box/file configuration, Steel construction, Keyed lock, Casters with brake, Fits under 30\"D surface",
+      "image_url": "",
+      "price": 245,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "ST-601",
+      "name": "Lateral File Cabinet 2-Drawer",
+      "category": "storage",
+      "specifications": "36\"W x 20\"D x 28\"H, Full-extension drawers, Anti-tip interlock, Accommodates letter/legal, Core removable lock",
+      "image_url": "",
+      "price": 380,
+      "markup_percent": 30,
+      "quantity": 6
+    },
+    {
+      "product_code": "ST-602",
+      "name": "Bookcase Open 5-Shelf",
+      "category": "storage",
+      "specifications": "36\"W x 14\"D x 68\"H, 3 adjustable shelves, Steel reinforced, 75 lb per shelf capacity, Wall anchor included",
+      "image_url": "",
+      "price": 420,
+      "markup_percent": 30,
+      "quantity": 3
+    },
+    {
+      "product_code": "TB-700",
+      "name": "Bar Height Cafe Table 36\" Round",
+      "category": "table",
+      "specifications": "36\" diameter laminate top, 42\" height, Chrome disc base, 150 lb capacity, Self-leveling glides",
+      "image_url": "",
+      "price": 420,
+      "markup_percent": 30,
+      "quantity": 1
+    },
+    {
+      "product_code": "TB-701",
+      "name": "Side Table Round 20\"",
+      "category": "table",
+      "specifications": "20\" diameter, 22\"H, Solid walnut top, Powder-coated steel base, 50 lb capacity",
+      "image_url": "",
+      "price": 185,
+      "markup_percent": 30,
+      "quantity": 2
+    },
+    {
+      "product_code": "AC-800",
+      "name": "Monitor Arm Dual Articulating",
+      "category": "accessory",
+      "specifications": "Supports 2x 27\" monitors, VESA 75/100, Clamp or grommet mount, 180° rotation, Integrated cable routing",
+      "image_url": "",
+      "price": 142,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "AC-801",
+      "name": "Cable Management Tray 48\"",
+      "category": "accessory",
+      "specifications": "48\" steel mesh tray, Under-desk mount, Tool-free install, 15 lb capacity, Black powder coat",
+      "image_url": "",
+      "price": 65,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "AC-802",
+      "name": "LED Desk Lamp Adjustable",
+      "category": "accessory",
+      "specifications": "5 color temperatures, Dimmable 10%-100%, Clamp mount, USB charging port, 50000 hour LED life",
+      "image_url": "",
+      "price": 89,
+      "markup_percent": 30,
+      "quantity": 18
+    },
+    {
+      "product_code": "PB-900",
+      "name": "Phone Booth Solo Acoustic Pod",
+      "category": "phone_booth",
+      "specifications": "Single occupancy, 35 dB noise reduction, Motion-activated ventilation, LED lighting, Integrated power/USB, 48\"W x 48\"D x 90\"H",
+      "image_url": "",
+      "price": 3450,
+      "markup_percent": 30,
+      "quantity": 2
+    },
+    {
+      "product_code": "GM-1000",
+      "name": "Gaming Desk 72\" with LED Edge",
+      "category": "gaming",
+      "specifications": "72\"W x 30\"D carbon fiber top, RGB LED edge lighting, Dual headset hooks, Cable management, Cup holder, Controller rack",
+      "image_url": "",
+      "price": 750,
+      "markup_percent": 30,
+      "quantity": 1
+    },
+    {
+      "product_code": "PL-1100",
+      "name": "Planter Box Large Fiberglass",
+      "category": "planter",
+      "specifications": "48\"L x 12\"W x 24\"H, Fiberglass construction, Built-in drainage, UV resistant, Indoor/outdoor rated, Self-watering insert",
+      "image_url": "",
+      "price": 210,
+      "markup_percent": 30,
+      "quantity": 3
+    },
+    {
+      "product_code": "PL-1101",
+      "name": "Planter Medium Ceramic",
+      "category": "planter",
+      "specifications": "14\" diameter x 18\"H, Hand-glazed ceramic, Drainage hole with plug, Saucer included, Matte white finish",
+      "image_url": "",
+      "price": 145,
+      "markup_percent": 30,
+      "quantity": 4
+    },
+    {
+      "product_code": "PL-1102",
+      "name": "Desktop Planter Bamboo Tray",
+      "category": "planter",
+      "specifications": "12\"L x 4\"W x 3\"H, Bamboo frame, 3 removable pots, Drainage tray, Fits on desktop or shelf",
+      "image_url": "",
+      "price": 55,
+      "markup_percent": 30,
+      "quantity": 6
+    }
+  ],
+  "totalCost": 82307,
+  "costPerSqFt": 5.49
+}

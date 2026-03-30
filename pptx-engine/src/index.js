@@ -155,6 +155,7 @@ async function main() {
   validate(payload);
 
   // 3. Pre-fetch remote images to local temp files
+  const t0 = Date.now();
   process.stderr.write("[pptx-engine] Resolving images...\n");
   const tempFiles = await resolveImages(payload);
   const resolved = payload.products.filter((p) => p.image_url).length;
@@ -170,11 +171,13 @@ async function main() {
   pres.layout = "ENVIROTECH";
 
   // 5. Generate slides
+  const tSlides = Date.now();
+
   generateCover(pres, payload);
   process.stderr.write("[pptx-engine] Generated: Cover slide\n");
 
   generatePricing(pres, payload);
-  process.stderr.write("[pptx-engine] Generated: Pricing slide\n");
+  process.stderr.write("[pptx-engine] Generated: Pricing slide(s)\n");
 
   addProductSlides(pres, payload);
   process.stderr.write(
@@ -184,10 +187,15 @@ async function main() {
   generateThankYou(pres, payload);
   process.stderr.write("[pptx-engine] Generated: Thank You slide\n");
 
+  const slideMs = Date.now() - tSlides;
+  process.stderr.write(`[pptx-engine] Slide generation: ${slideMs}ms\n`);
+
   // 6. Write file
   try {
     await pres.writeFile({ fileName: payload.outputPath });
+    const totalMs = Date.now() - t0;
     process.stderr.write(`[pptx-engine] Written to ${payload.outputPath}\n`);
+    process.stderr.write(`[pptx-engine] Total time: ${totalMs}ms\n`);
   } finally {
     cleanupTemp(tempFiles);
   }
