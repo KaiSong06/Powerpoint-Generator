@@ -10,7 +10,7 @@ from ..schemas.consultant import ConsultantOut
 from ..schemas.presentation import PresentationDetail, PresentationOut
 from ..schemas.product import ProductOut
 from ..services.pptx_service import generate_presentation
-from ..services.storage_service import upload_file
+from ..services.storage_service import get_signed_url, upload_file
 
 router = APIRouter(prefix="/api/presentations", tags=["presentations"])
 
@@ -177,6 +177,28 @@ async def generate_presentation_endpoint(
         presentation_id,
     )
     return dict(updated)
+
+
+@router.get("/{presentation_id}/download")
+async def download_presentation(
+    presentation_id: int,
+    _user: AuthUser = Depends(get_current_user),
+):
+    """Generate a time-limited signed URL for downloading the PPTX file."""
+    row = await fetch_one(
+        "SELECT file_url FROM presentations WHERE id = $1",
+        presentation_id,
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    file_path = row["file_url"]
+    if not file_path:
+        raise HTTPException(status_code=404, detail="No file generated for this presentation")
+
+    settings = get_settings()
+    signed_url = await get_signed_url(settings.storage_bucket, file_path, expires_in=3600)
+    return {"download_url": signed_url}
 
 
 @router.delete("/{presentation_id}", status_code=204)
