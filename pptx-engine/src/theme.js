@@ -43,8 +43,16 @@ const FLOOR_PLAN = {
   W: 4.0,
 };
 
-// ── Default logo path ──────────────────────────────────────────────────────
-const DEFAULT_LOGO_PATH = path.resolve(__dirname, "../assets/envirotech-logo.png");
+// ── Logo paths ─────────────────────────────────────────────────────────────
+// Light logo (white text) for dark backgrounds: cover, thank you slides
+// Dark logo (dark text) for light backgrounds: pricing, product slides
+const LOGO_LIGHT_PATH = path.resolve(__dirname, "../assets/envirotech-logo-light.png");
+const LOGO_DARK_PATH = path.resolve(__dirname, "../assets/envirotech-logo-dark.png");
+const DEFAULT_LOGO_PATH = LOGO_DARK_PATH;
+
+// Actual aspect ratios from the source PNGs
+const LOGO_LIGHT_ASPECT = 90 / 344;  // h/w ≈ 0.262
+const LOGO_DARK_ASPECT = 74 / 260;   // h/w ≈ 0.285
 
 // ── Helper: add the black header bar + title + logo ────────────────────────
 function addHeaderBar(slide, logoPath, text) {
@@ -70,14 +78,14 @@ function addHeaderBar(slide, logoPath, text) {
     valign: "middle",
   });
 
-  // Logo top-right
-  const logo = logoPath || DEFAULT_LOGO_PATH;
+  // Logo top-right (light variant — sits on dark header bar)
+  const logo = logoPath || LOGO_LIGHT_PATH;
   slide.addImage({
     path: logo,
     x: LOGO.X,
     y: LOGO.Y,
     w: LOGO.W,
-    h: LOGO.W * 0.4, // approximate aspect ratio
+    h: LOGO.W * LOGO_LIGHT_ASPECT,
   });
 }
 
@@ -102,6 +110,10 @@ module.exports = {
   LOGO,
   FLOOR_PLAN,
   DEFAULT_LOGO_PATH,
+  LOGO_LIGHT_PATH,
+  LOGO_DARK_PATH,
+  LOGO_LIGHT_ASPECT,
+  LOGO_DARK_ASPECT,
   addHeaderBar,
   addFloorPlan,
 };

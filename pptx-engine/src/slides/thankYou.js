@@ -1,6 +1,6 @@
 "use strict";
 
-const { COLORS, DEFAULT_LOGO_PATH } = require("../theme");
+const { COLORS, LOGO_LIGHT_PATH, LOGO_LIGHT_ASPECT } = require("../theme");
 
 /**
  * Generate the Thank You slide (final slide).
@@ -25,14 +25,14 @@ function generateThankYou(pres, data) {
     bold: true,
   });
 
-  // ── Logo bottom-left ─────────────────────────────────────────────────────
-  const logo = data.logoPath || DEFAULT_LOGO_PATH;
+  // ── Logo bottom-left (light variant for dark background) ──────────────────
+  const logoW = 2.0;
   slide.addImage({
-    path: logo,
+    path: LOGO_LIGHT_PATH,
     x: 0.5,
     y: 4.8,
-    w: 2.0,
-    h: 2.0 * 0.4, // proportional height
+    w: logoW,
+    h: logoW * LOGO_LIGHT_ASPECT,
   });
 
   return slide;

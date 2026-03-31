@@ -1,219 +1,66 @@
-#Architecture
-┌─────────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│   Next.js Frontend  │────▶│   FastAPI Backend    │────▶│  Node.js PPTX    │
-│   (App Router)      │◀────│   (Python 3.11+)    │◀────│  Engine (CLI)    │
-│   Supabase Auth     │     │   asyncpg + Supabase │     │  pptxgenjs       │
-│   Tailwind CSS      │     │                     │     │                  │
-└─────────────────────┘     └─────────────────────┘     └──────────────────┘
-                                      │
-                                      ▼
-                            ┌─────────────────────┐
-                            │  Supabase            │
-                            │  - PostgreSQL        │
-                            │  - Storage (public)  │
-                            │  - Auth              │
-                            └─────────────────────┘
+# CLAUDE.md
 
-#Database Schema
-CREATE TABLE consultants (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255),
-  phone VARCHAR(20)
-);
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-CREATE TABLE products (
-  product_code VARCHAR(50) PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  specifications TEXT,
-  image_url TEXT,
-  price DECIMAL(10, 2),
-  markup_percent DECIMAL(5, 2),
-  category VARCHAR(100),
-  created_at TIMESTAMP DEFAULT NOW()
-);
+## Development Commands
 
-CREATE TABLE presentations (
-  id SERIAL PRIMARY KEY,
-  file_url TEXT,
-  file_name VARCHAR(255),
-  category VARCHAR(100),
-  product_count INTEGER,
-  sq_ft INTEGER,
-  client_name VARCHAR(255),
-  office_address TEXT,
-  suite_number VARCHAR(100),
-  floor_plan_url TEXT,
-  consultant_id INTEGER REFERENCES consultants(id),
-  generated_at TIMESTAMP DEFAULT NOW()
-);
+### Frontend (Next.js 16 + React 19)
+```bash
+cd frontend
+npm install
+npm run dev          # starts on 0.0.0.0:3000
+npm run build        # production build
+npm run lint         # eslint
+```
 
-CREATE TABLE presentation_products (
-  id SERIAL PRIMARY KEY,
-  presentation_id INTEGER REFERENCES presentations(id) ON DELETE CASCADE,
-  product_code VARCHAR(50) REFERENCES products(product_code),
-  quantity INTEGER NOT NULL,
-  UNIQUE(presentation_id, product_code)
-);
+### Backend (FastAPI + Python 3.11+)
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload    # starts on :8000
+```
+Requires `.env` in `backend/` with: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_DB_URL`. Optional: `PPTX_ENGINE_PATH` (default `../pptx-engine`), `STORAGE_BUCKET` (default `presentations`), `FRONTEND_URL` (default `http://localhost:3000`).
 
-#Product Categories
-workstation    → 1 per slide (workbench rule)
-task_seating   → 1-3 per slide
-meeting        → 1-3 per slide
-lounge         → 1-3 per slide
-reception      → 1-3 per slide
-storage        → 1-3 per slide
-table          → 1-3 per slide
-accessory      → 1-3 per slide
-phone_booth    → 1-3 per slide
-gaming         → 1-3 per slide
-planter        → 1-3 per slide
+### PPTX Engine (Node.js CLI)
+```bash
+cd pptx-engine
+npm install
+echo '{"outputPath":"test.pptx",...}' | node src/index.js
+```
+Not run directly — invoked by the backend's `pptx_service.py` via subprocess with JSON on stdin.
 
-#Directory Structure
-envirotech-pptx/
-├── frontend/                    # Next.js app
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx                    # Dashboard
-│   │   │   ├── login/page.tsx
-│   │   │   ├── create/page.tsx             # Multi-step creation wizard
-│   │   │   └── presentations/[id]/page.tsx # View/download
-│   │   ├── components/
-│   │   │   ├── auth/
-│   │   │   │   └── AuthProvider.tsx
-│   │   │   ├── create/
-│   │   │   │   ├── ClientInfoStep.tsx
-│   │   │   │   ├── ProductSelectStep.tsx
-│   │   │   │   ├── FloorPlanUpload.tsx
-│   │   │   │   ├── ReviewStep.tsx
-│   │   │   │   └── StepWizard.tsx
-│   │   │   ├── dashboard/
-│   │   │   │   └── PresentationList.tsx
-│   │   │   └── ui/                         # Shared UI components
-│   │   ├── lib/
-│   │   │   ├── supabase.ts                 # Supabase client
-│   │   │   ├── api.ts                      # FastAPI client wrapper
-│   │   │   └── types.ts                    # Shared TypeScript types
-│   │   └── styles/
-│   │       └── globals.css
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   ├── tsconfig.json
-│   └── next.config.js
-│
-├── backend/                     # FastAPI app
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py              # FastAPI app entry
-│   │   ├── config.py            # Env vars, settings
-│   │   ├── database.py          # asyncpg connection pool
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   ├── consultant.py
-│   │   │   ├── product.py
-│   │   │   └── presentation.py
-│   │   ├── routers/
-│   │   │   ├── __init__.py
-│   │   │   ├── consultants.py
-│   │   │   ├── products.py
-│   │   │   └── presentations.py
-│   │   ├── services/
-│   │   │   ├── __init__.py
-│   │   │   ├── pptx_service.py   # Calls Node.js engine
-│   │   │   └── storage_service.py # Supabase storage ops
-│   │   └── schemas/
-│   │       ├── __init__.py
-│   │       ├── consultant.py     # Pydantic models
-│   │       ├── product.py
-│   │       └── presentation.py
-│   ├── requirements.txt
-│   └── .env
-│
-├── pptx-engine/                 # Node.js PPTX generator
-│   ├── src/
-│   │   ├── index.js             # CLI entry: reads JSON stdin, writes PPTX
-│   │   ├── slides/
-│   │   │   ├── cover.js
-│   │   │   ├── pricing.js
-│   │   │   └── products.js
-│   │   ├── layouts/
-│   │   │   ├── oneProduct.js
-│   │   │   ├── twoProducts.js
-│   │   │   └── threeProducts.js
-│   │   └── theme.js             # Colors, fonts, dimensions constants
-│   ├── package.json
-│   └── assets/
-│       └── envirotech-logo.png  # Embedded logo
-│
-└── supabase/
-    └── migrations/
-        └── 001_initial_schema.sql
+## Architecture
 
-#Slide Specifications (from example PDF)
+Three-service architecture: **Next.js frontend** → **FastAPI backend** → **Node.js PPTX engine**.
 
-Global Constants:
--Layout: 16:9 (10" × 5.625")
--Primary color: E31B23 (Envirotech red)
--Secondary: 2D2D2D (dark charcoal / header bars)
--Text dark: 333333
--Text light: FFFFFF
--Header font: Arial Bold
--Body font: Calibri
--Logo: top-right on content slides, top-left on cover
+- **Frontend** (`frontend/`): Next.js App Router with Supabase Auth (via `@supabase/ssr`), Tailwind CSS v4. Multi-step wizard for creating presentations (client info → product selection → floor plan upload → review).
+- **Backend** (`backend/`): FastAPI with asyncpg connection pool (not an ORM). Pydantic v2 for validation. Routes in `app/routers/`, business logic in `app/services/`. Config via `pydantic-settings` reading `.env`.
+- **PPTX Engine** (`pptx-engine/`): Stateless CLI using pptxgenjs. Reads full JSON payload from stdin, writes `.pptx` to `outputPath`. Downloads remote images to temp files, cleans up after. Logs progress to stderr.
+- **Supabase**: PostgreSQL database, file storage (private bucket with signed URLs), and authentication.
 
-Slide 1 — Cover:
--Full-bleed background image (stock office photo — bundled as asset)
--Logo: top-left, ~2.5" wide
--Client name: bottom-left, ~36pt, white, serif-style bold
--Location: below client name, ~14pt, white
--Red horizontal line separator (~1" wide)
--Date: below separator, ~12pt, white
--Consultant name/email/phone: ~10pt, white, stacked
+### Key Data Flow: Presentation Generation
+1. Frontend submits creation request to backend API
+2. Backend `pptx_service.py` fetches presentation + products + consultant from DB, computes markup pricing
+3. Backend spawns `node pptx-engine/src/index.js` with JSON payload on stdin
+4. Engine generates slides (cover → pricing → product slides → thank you), writes `.pptx` file
+5. Backend uploads file to Supabase Storage, updates presentation record with `file_url`
 
-Slide 2 — Pricing Summary:
--Black header bar (full width, ~0.55" tall) with "PRICING" in white
--Logo: top-right
--Left column:
-    -Address (large, ~28pt, bold)
-    -Suite number (~18pt)
-    -Red labels "PROJECT COST" / "SQ FT COST" (~10pt, red)
-    -Dollar amounts (~36pt, bold)
-    -"FOR X SQ FT" / "PER SQ FT" (~10pt, gray)
-    -Floor plan image (thumbnail, ~4" wide)
+### Product Slide Layout Rules
+- `workstation` category: **1 product per slide** (workbench rule)
+- All other categories: **1-3 products per slide**
+- Layout files: `oneProduct.js`, `twoProducts.js`, `threeProducts.js` in `pptx-engine/src/layouts/`
 
--Right column:
-    -Table with red header row
-    -Columns: Room/Area, Quantity, Price, Extended
-    -Rows for each product in presentation
-    -Green checkmark icons on extended price column
-    -Bold "Total" row at bottom
-    -Alternating white/light-gray rows
+## Slide Design Constants
+- Layout: 16:9 (10" × 5.625")
+- Primary color: `E31B23` (Envirotech red), Secondary: `2D2D2D` (dark charcoal)
+- Text: `333333` (dark), `FFFFFF` (light)
+- Fonts: Arial Bold (headers), Calibri (body)
+- Theme constants defined in `pptx-engine/src/theme.js`
 
-Slides 3+ — Product Slides:
--Black header bar with "PROPOSED SOLUTIONS"
--Logo: top-right
--Category + subcategory subtitle (e.g., "Workstations | Height Adjustable Benching"):
-    -Category in white/dark, subcategory in red
--Floor plan thumbnail: top-left below header (~4" wide)
+## Database
+Four tables: `consultants`, `products` (PK: `product_code`), `presentations`, `presentation_products` (junction table). Schema in `supabase/migrations/001_initial_schema.sql`. Backend uses raw SQL via asyncpg, not an ORM.
 
--Product card(s): each has:
-    -Product image
-    -Product name (bold, italic-style, underlined with thin line)
-    -"Specifications:" label (bold)
-    -Spec list with red "+" bullets
-    -"Warranty" in red at bottom of specs
-
-
-
-Layout Rules:
-
--1 product (workstation category): Floor plan top-left, specs bottom-left, large product image right half
--2 products: Floor plan top-left, two product cards side-by-side on right
--3 products: Floor plan top-left, three product cards evenly spaced across bottom
-
-Slide N (Final) — Thank You
-
-Dark charcoal background (2D2D2D)
-"Thank You" in large white bold serif (~48pt)
-Envirotech logo bottom-left
+## Important Notes
+- Frontend uses Next.js 16 which has breaking changes from earlier versions. Check `frontend/node_modules/next/dist/docs/` before using Next.js APIs.
+- The presentations storage bucket is **private** — files are served via signed download URLs.
+- Product prices include markup: `price * (1 + markup_percent / 100)`.
