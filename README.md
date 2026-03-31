@@ -130,6 +130,7 @@ cd frontend && npm run dev
 | GET | `/api/consultants` | List consultants |
 | GET | `/api/presentations` | List presentations |
 | GET | `/api/presentations/{id}` | Presentation detail with products |
+| GET | `/api/presentations/{id}/download` | Signed download URL (1h expiry) |
 | POST | `/api/presentations/generate` | Create + generate PPTX (multipart form) |
 | DELETE | `/api/presentations/{id}` | Delete presentation |
 

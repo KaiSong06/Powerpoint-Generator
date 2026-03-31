@@ -121,6 +121,13 @@ export async function deletePresentation(id: number): Promise<void> {
   await apiFetch<void>(`/api/presentations/${id}`, { method: "DELETE" });
 }
 
+export async function getDownloadUrl(id: number): Promise<string> {
+  const result = await apiFetch<{ download_url: string }>(
+    `/api/presentations/${id}/download`
+  );
+  return result.download_url;
+}
+
 /**
  * Generate a presentation. Uses multipart/form-data for the floor plan upload.
  */

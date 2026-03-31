@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { Presentation } from "@/lib/types";
+import { getDownloadUrl } from "@/lib/api";
 
 interface PresentationListProps {
   presentations: Presentation[];
@@ -91,6 +92,8 @@ export default function PresentationList({
 }
 
 function PresentationCard({ presentation }: { presentation: Presentation }) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const date = presentation.generated_at
     ? new Date(presentation.generated_at).toLocaleDateString("en-US", {
         year: "numeric",
@@ -98,6 +101,18 @@ function PresentationCard({ presentation }: { presentation: Presentation }) {
         day: "numeric",
       })
     : "—";
+
+  async function handleDownload() {
+    setIsDownloading(true);
+    try {
+      const url = await getDownloadUrl(presentation.id);
+      window.open(url, "_blank");
+    } catch {
+      // Fail silently on card — user can retry or use detail page
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border-l-4 border-l-envirotech-red border border-gray-200 p-5 hover:shadow-md transition-shadow">
@@ -131,15 +146,14 @@ function PresentationCard({ presentation }: { presentation: Presentation }) {
         >
           View Details
         </Link>
-        {presentation.file_url && (
-          <a
-            href={presentation.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-600 font-medium hover:underline ml-auto"
+        {presentation.file_name && (
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="text-sm text-gray-600 font-medium hover:underline ml-auto disabled:opacity-50"
           >
-            Download
-          </a>
+            {isDownloading ? "Loading..." : "Download"}
+          </button>
         )}
       </div>
     </div>

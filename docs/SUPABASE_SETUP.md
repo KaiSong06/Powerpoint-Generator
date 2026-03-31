@@ -68,10 +68,18 @@ The app stores generated PPTX files and uploaded floor plans in Supabase Storage
 
 | Bucket name | Public | Purpose |
 |-------------|--------|---------|
-| `presentations` | Yes | Generated PPTX files |
+| `presentations` | **No** (private) | Generated PPTX files (contain sensitive client data) |
 | `floor-plans` | Yes | Uploaded floor plan images |
 
-3. For each bucket, set the following policy to allow authenticated uploads:
+3. **`presentations` bucket** (private) — the backend generates time-limited signed URLs for downloads:
+   - Go to **Policies** tab on the bucket
+   - Add a policy for **INSERT** with target role `service_role`:
+     ```sql
+     true
+     ```
+   - No SELECT policy needed — the backend uses the service role key to generate signed URLs
+
+4. **`floor-plans` bucket** (public) — floor plan images are embedded in slides and need direct access:
    - Go to **Policies** tab on the bucket
    - Add a policy for **INSERT** with target role `authenticated`:
      ```sql
@@ -82,7 +90,7 @@ The app stores generated PPTX files and uploaded floor plans in Supabase Storage
      true
      ```
 
-> **Note:** Making buckets public allows anyone with the URL to download files. For production, restrict SELECT to authenticated users and use signed URLs.
+> **Note:** The `presentations` bucket is private because PPTX files contain sensitive client data (pricing, addresses, internal costs). Downloads go through the backend, which verifies authentication and issues a signed URL valid for 1 hour. Use the `service_role` key in `backend/.env` to ensure the backend can generate signed URLs.
 
 ## 5. Configure Authentication
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getPresentation, deletePresentation } from "@/lib/api";
+import { getPresentation, deletePresentation, getDownloadUrl } from "@/lib/api";
 import type { Presentation } from "@/lib/types";
 import { CATEGORY_LABELS, type ProductCategory } from "@/lib/types";
 import { DetailSkeleton } from "@/components/ui/Skeleton";
@@ -22,6 +22,7 @@ export default function PresentationDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -49,6 +50,19 @@ export default function PresentationDetailPage({
       setError(err instanceof Error ? err.message : "Failed to delete");
       setIsDeleting(false);
       setShowDeleteModal(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!presentation) return;
+    setIsDownloading(true);
+    try {
+      const url = await getDownloadUrl(presentation.id);
+      window.open(url, "_blank");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to get download link");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -198,15 +212,14 @@ export default function PresentationDetailPage({
 
         {/* Actions */}
         <div className="px-6 py-4 flex gap-3">
-          {presentation.file_url && (
-            <a
-              href={presentation.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-envirotech-red text-white px-5 py-2 rounded-md font-medium hover:bg-red-700 transition-colors text-sm"
+          {presentation.file_name && (
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="bg-envirotech-red text-white px-5 py-2 rounded-md font-medium hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
             >
-              Download PPTX
-            </a>
+              {isDownloading ? "Preparing..." : "Download PPTX"}
+            </button>
           )}
           <button
             onClick={() => setShowDeleteModal(true)}
