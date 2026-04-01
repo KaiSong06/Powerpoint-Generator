@@ -7,7 +7,13 @@ from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
 from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantOut
-from ..schemas.presentation import AutoSelectRequest, PresentationDetail, PresentationOut
+from ..schemas.presentation import (
+    AutoSelectRequest,
+    GenerateFromBriefRequest,
+    PresentationDetail,
+    PresentationOut,
+)
+from ..services.space_parser import parse_space_brief
 from ..schemas.product import ProductOut
 from ..services.pptx_service import generate_presentation
 from ..services.product_matcher import match_products
@@ -98,6 +104,93 @@ async def auto_select_endpoint(
                 )
 
     # Generate PPTX and upload
+    presentation_id = row["id"]
+    try:
+        await generate_presentation(presentation_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Re-fetch the updated record
+    updated = await fetch_one(
+        """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
+           FROM presentations WHERE id = $1""",
+        presentation_id,
+    )
+    return dict(updated)
+
+
+@router.post("/generate-from-brief", response_model=PresentationOut, status_code=201)
+async def generate_from_brief_endpoint(
+    body: GenerateFromBriefRequest,
+    user: AuthUser = Depends(get_current_user),
+):
+    """Parse a natural language space brief with AI, auto-select products, and generate a PPTX."""
+    # Step 1: AI-parse the brief into structured spaces
+    try:
+        space_requests = await parse_space_brief(body.brief)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    # Step 2: Run the product matcher
+    spaces = [
+        {"space_type": s.space_type.value, "count": s.count, "capacity": s.capacity}
+        for s in space_requests
+    ]
+    selections = await match_products(spaces)
+
+    if not selections:
+        raise HTTPException(
+            status_code=400,
+            detail="No products matched the parsed space breakdown",
+        )
+
+    # Step 3: Resolve consultant
+    consultant_id = body.consultant_id
+    if consultant_id is None:
+        c_row = await fetch_one(
+            "SELECT id FROM consultants WHERE email = $1",
+            user.email,
+        )
+        if not c_row:
+            raise HTTPException(
+                status_code=400,
+                detail="No consultant_id provided and no consultant matches your email",
+            )
+        consultant_id = c_row["id"]
+
+    # Step 4: Create presentation + product associations in a transaction
+    product_items = [
+        {"product_code": s["product_code"], "quantity": s["quantity"]}
+        for s in selections
+    ]
+
+    async with get_pool().acquire() as conn:
+        async with conn.transaction():
+            row = await conn.fetchrow(
+                """INSERT INTO presentations
+                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
+                body.client_name,
+                body.office_address,
+                body.suite_number,
+                body.sq_ft,
+                consultant_id,
+                len(product_items),
+            )
+
+            for item in product_items:
+                await conn.execute(
+                    """INSERT INTO presentation_products (presentation_id, product_code, quantity)
+                       VALUES ($1, $2, $3)""",
+                    row["id"],
+                    item["product_code"],
+                    item["quantity"],
+                )
+
+    # Step 5: Generate PPTX and upload
     presentation_id = row["id"]
     try:
         await generate_presentation(presentation_id)
