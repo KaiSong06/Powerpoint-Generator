@@ -20,7 +20,7 @@ async def list_products(
     category: str | None = Query(None),
     search: str | None = Query(None),
 ):
-    query = "SELECT product_code, name, specifications, image_url, price, markup_percent, category FROM products WHERE 1=1"
+    query = "SELECT product_code, name, specifications, image_url, price, markup_percent, category, space_type, product_role, capacity, quantity_rule FROM products WHERE 1=1"
     args: list = []
     idx = 1
 
@@ -42,7 +42,7 @@ async def list_products(
 @router.get("/{product_code}", response_model=ProductOut)
 async def get_product(product_code: str):
     row = await fetch_one(
-        "SELECT product_code, name, specifications, image_url, price, markup_percent, category FROM products WHERE product_code = $1",
+        "SELECT product_code, name, specifications, image_url, price, markup_percent, category, space_type, product_role, capacity, quantity_rule FROM products WHERE product_code = $1",
         product_code,
     )
     if not row:
@@ -53,9 +53,9 @@ async def get_product(product_code: str):
 @router.post("", response_model=ProductOut, status_code=201)
 async def create_product(body: ProductCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
-        """INSERT INTO products (product_code, name, specifications, image_url, price, markup_percent, category)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           RETURNING product_code, name, specifications, image_url, price, markup_percent, category""",
+        """INSERT INTO products (product_code, name, specifications, image_url, price, markup_percent, category, space_type, product_role, capacity, quantity_rule)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           RETURNING product_code, name, specifications, image_url, price, markup_percent, category, space_type, product_role, capacity, quantity_rule""",
         body.product_code,
         body.name,
         body.specifications,
@@ -63,6 +63,10 @@ async def create_product(body: ProductCreate, _user: AuthUser = Depends(get_curr
         body.price,
         body.markup_percent,
         body.category,
+        body.space_type or [],
+        body.product_role,
+        body.capacity,
+        body.quantity_rule,
     )
     return dict(row)
 
@@ -70,15 +74,20 @@ async def create_product(body: ProductCreate, _user: AuthUser = Depends(get_curr
 @router.put("/{product_code}", response_model=ProductOut)
 async def update_product(product_code: str, body: ProductCreate, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
-        """UPDATE products SET name = $1, specifications = $2, image_url = $3, price = $4, markup_percent = $5, category = $6
-           WHERE product_code = $7
-           RETURNING product_code, name, specifications, image_url, price, markup_percent, category""",
+        """UPDATE products SET name = $1, specifications = $2, image_url = $3, price = $4, markup_percent = $5, category = $6,
+           space_type = $7, product_role = $8, capacity = $9, quantity_rule = $10
+           WHERE product_code = $11
+           RETURNING product_code, name, specifications, image_url, price, markup_percent, category, space_type, product_role, capacity, quantity_rule""",
         body.name,
         body.specifications,
         body.image_url,
         body.price,
         body.markup_percent,
         body.category,
+        body.space_type or [],
+        body.product_role,
+        body.capacity,
+        body.quantity_rule,
         product_code,
     )
     if not row:
