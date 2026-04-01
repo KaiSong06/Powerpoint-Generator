@@ -1,6 +1,7 @@
 from datetime import datetime
+from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .consultant import ConsultantOut
 from .product import ProductOut
@@ -9,6 +10,34 @@ from .product import ProductOut
 class ProductItem(BaseModel):
     product_code: str
     quantity: int
+
+
+class SpaceType(str, Enum):
+    open_workstation = "open_workstation"
+    private_office = "private_office"
+    conference_room = "conference_room"
+    huddle_room = "huddle_room"
+    phone_booth = "phone_booth"
+    reception = "reception"
+    lounge = "lounge"
+    break_room = "break_room"
+    training_room = "training_room"
+    executive_office = "executive_office"
+
+
+class SpaceRequest(BaseModel):
+    space_type: SpaceType
+    count: int = Field(..., ge=1)
+    capacity: int | None = Field(None, ge=1)
+
+
+class AutoSelectRequest(BaseModel):
+    client_name: str
+    office_address: str
+    suite_number: str | None = None
+    sq_ft: int = Field(..., ge=1)
+    consultant_id: int | None = None
+    spaces: list[SpaceRequest] = Field(..., min_length=1)
 
 
 class PresentationCreate(BaseModel):

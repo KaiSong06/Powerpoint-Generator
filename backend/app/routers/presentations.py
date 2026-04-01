@@ -7,9 +7,10 @@ from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
 from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantOut
-from ..schemas.presentation import PresentationDetail, PresentationOut
+from ..schemas.presentation import AutoSelectRequest, PresentationDetail, PresentationOut
 from ..schemas.product import ProductOut
 from ..services.pptx_service import generate_presentation
+from ..services.product_matcher import match_products
 from ..services.storage_service import get_signed_url, upload_file
 
 router = APIRouter(prefix="/api/presentations", tags=["presentations"])
@@ -31,6 +32,85 @@ async def list_presentations(
         offset,
     )
     return [dict(r) for r in rows]
+
+
+@router.post("/auto-select", response_model=PresentationOut, status_code=201)
+async def auto_select_endpoint(
+    body: AutoSelectRequest,
+    user: AuthUser = Depends(get_current_user),
+):
+    """Auto-select products based on a space breakdown, then generate a PPTX."""
+    # Run the product matcher
+    spaces = [
+        {"space_type": s.space_type.value, "count": s.count, "capacity": s.capacity}
+        for s in body.spaces
+    ]
+    selections = await match_products(spaces)
+
+    if not selections:
+        raise HTTPException(
+            status_code=400,
+            detail="No products matched the given space breakdown",
+        )
+
+    # Resolve consultant
+    consultant_id = body.consultant_id
+    if consultant_id is None:
+        c_row = await fetch_one(
+            "SELECT id FROM consultants WHERE email = $1",
+            user.email,
+        )
+        if not c_row:
+            raise HTTPException(
+                status_code=400,
+                detail="No consultant_id provided and no consultant matches your email",
+            )
+        consultant_id = c_row["id"]
+
+    # Create presentation + product associations in a transaction
+    product_items = [
+        {"product_code": s["product_code"], "quantity": s["quantity"]}
+        for s in selections
+    ]
+
+    async with get_pool().acquire() as conn:
+        async with conn.transaction():
+            row = await conn.fetchrow(
+                """INSERT INTO presentations
+                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
+                body.client_name,
+                body.office_address,
+                body.suite_number,
+                body.sq_ft,
+                consultant_id,
+                len(product_items),
+            )
+
+            for item in product_items:
+                await conn.execute(
+                    """INSERT INTO presentation_products (presentation_id, product_code, quantity)
+                       VALUES ($1, $2, $3)""",
+                    row["id"],
+                    item["product_code"],
+                    item["quantity"],
+                )
+
+    # Generate PPTX and upload
+    presentation_id = row["id"]
+    try:
+        await generate_presentation(presentation_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Re-fetch the updated record
+    updated = await fetch_one(
+        """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
+           FROM presentations WHERE id = $1""",
+        presentation_id,
+    )
+    return dict(updated)
 
 
 @router.get("/{presentation_id}", response_model=PresentationDetail)
