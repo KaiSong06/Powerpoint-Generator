@@ -7,7 +7,13 @@ from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
 from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantOut
-from ..schemas.presentation import AutoSelectRequest, GenerateFromBriefRequest, PresentationDetail, PresentationOut
+from ..schemas.presentation import (
+    AutoSelectRequest,
+    GenerateFromBriefRequest,
+    PresentationDetail,
+    PresentationOut,
+)
+from ..services.space_parser import parse_space_brief
 from ..schemas.product import ProductOut
 from ..services.brief_parser import BriefParseError, parse_brief
 from ..services.pptx_service import generate_presentation
@@ -119,23 +125,26 @@ async def generate_from_brief_endpoint(
     body: GenerateFromBriefRequest,
     user: AuthUser = Depends(get_current_user),
 ):
-    """Parse a natural-language brief with AI, auto-select products, and generate a PPTX."""
-    # Step 1: AI parses the brief into structured spaces
+    """Parse a natural language space brief with AI, auto-select products, and generate a PPTX."""
+    # Step 1: AI-parse the brief into structured spaces
     try:
-        spaces = await parse_brief(body.brief)
-    except BriefParseError as e:
+        space_requests = await parse_space_brief(body.brief)
+    except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
-    # Step 2: Match products deterministically
+    # Step 2: Run the product matcher
+    spaces = [
+        {"space_type": s.space_type.value, "count": s.count, "capacity": s.capacity}
+        for s in space_requests
+    ]
     selections = await match_products(spaces)
 
     if not selections:
-        # Build a helpful message listing which space types had no matches
-        space_types = [s["space_type"] for s in spaces]
         raise HTTPException(
             status_code=400,
-            detail=f"No products matched the parsed spaces: {', '.join(space_types)}. "
-            "Check that products have the correct space_type metadata.",
+            detail="No products matched the parsed space breakdown",
         )
 
     # Step 3: Resolve consultant
@@ -152,7 +161,7 @@ async def generate_from_brief_endpoint(
             )
         consultant_id = c_row["id"]
 
-    # Step 4: Create presentation + product associations
+    # Step 4: Create presentation + product associations in a transaction
     product_items = [
         {"product_code": s["product_code"], "quantity": s["quantity"]}
         for s in selections
@@ -182,14 +191,14 @@ async def generate_from_brief_endpoint(
                     item["quantity"],
                 )
 
-    # Step 5: Generate PPTX
+    # Step 5: Generate PPTX and upload
     presentation_id = row["id"]
     try:
         await generate_presentation(presentation_id)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Re-fetch updated record
+    # Re-fetch the updated record
     updated = await fetch_one(
         """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
            FROM presentations WHERE id = $1""",
