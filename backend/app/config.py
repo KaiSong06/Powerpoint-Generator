@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     pptx_engine_path: str = "../pptx-engine"
     storage_bucket: str = "presentations"
     frontend_url: str = "http://localhost:3000"
-    anthropic_api_key: str = ""
+    gemini_api_key: str = ""
 
 
 @lru_cache

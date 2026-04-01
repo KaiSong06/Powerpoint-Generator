@@ -1,7 +1,7 @@
 import json
 import logging
 
-import anthropic
+import google.generativeai as genai
 
 from ..config import get_settings
 from ..schemas.presentation import SpaceType
@@ -53,23 +53,22 @@ async def parse_brief(text: str) -> list[dict]:
         BriefParseError: If parsing fails or returns no valid spaces.
     """
     settings = get_settings()
-    if not settings.anthropic_api_key:
-        raise BriefParseError("Anthropic API key is not configured")
+    if not settings.gemini_api_key:
+        raise BriefParseError("Gemini API key is not configured")
 
-    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    genai.configure(api_key=settings.gemini_api_key)
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        system_instruction=_SYSTEM_PROMPT,
+    )
 
     try:
-        message = await client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
-            system=_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": text}],
-        )
-    except anthropic.APIError as e:
-        logger.error("Anthropic API error: %s", e)
+        response = await model.generate_content_async(text)
+    except Exception as e:
+        logger.error("Gemini API error: %s", e)
         raise BriefParseError("AI service is temporarily unavailable") from e
 
-    raw = message.content[0].text.strip()
+    raw = response.text.strip()
 
     # Strip markdown fences if present
     if raw.startswith("```"):
