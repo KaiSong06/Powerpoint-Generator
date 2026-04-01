@@ -1,0 +1,10 @@
+{
+  "name": "powerpoint-generator",
+  "private": true,
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "postinstall": "cd pptx-engine && npm install"
+  }
+}
