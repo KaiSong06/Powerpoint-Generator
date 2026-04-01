@@ -18,6 +18,7 @@ export default function SettingsPage() {
 
     getProfile()
       .then((p) => {
+        if (!p) return;
         setName(p.name);
         setPhone(p.phone || "");
       })
