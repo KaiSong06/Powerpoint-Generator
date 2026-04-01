@@ -1,28 +1,22 @@
 export type ProductCategory =
-  | "workstation"
-  | "task_seating"
-  | "meeting"
+  | "cafe_furniture"
+  | "conference_seating"
+  | "guest_seating"
   | "lounge"
-  | "reception"
-  | "storage"
-  | "table"
-  | "accessory"
-  | "phone_booth"
-  | "gaming"
-  | "planter";
+  | "meeting_table"
+  | "office_suite"
+  | "task_seating"
+  | "workstation";
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  workstation: "Workstations",
-  task_seating: "Task Seating",
-  meeting: "Meeting",
+  cafe_furniture: "Café Furniture",
+  conference_seating: "Conference Seating",
+  guest_seating: "Guest Seating",
   lounge: "Lounge",
-  reception: "Reception",
-  storage: "Storage",
-  table: "Tables",
-  accessory: "Accessories",
-  phone_booth: "Phone Booths",
-  gaming: "Gaming",
-  planter: "Planters",
+  meeting_table: "Meeting Tables",
+  office_suite: "Office Suite",
+  task_seating: "Task Seating",
+  workstation: "Workstations",
 };
 
 export interface Consultant {

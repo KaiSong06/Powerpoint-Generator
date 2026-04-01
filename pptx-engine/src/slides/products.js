@@ -7,17 +7,14 @@ const { layoutThreeProducts } = require("../layouts/threeProducts");
 
 // Category display names
 const CATEGORY_LABELS = {
-  workstation: "Workstations",
-  task_seating: "Task Seating",
-  meeting: "Meeting",
+  cafe_furniture: "Café Furniture",
+  conference_seating: "Conference Seating",
+  guest_seating: "Guest Seating",
   lounge: "Lounge",
-  reception: "Reception",
-  storage: "Storage",
-  table: "Tables",
-  accessory: "Accessories",
-  phone_booth: "Phone Booths",
-  gaming: "Gaming",
-  planter: "Planters",
+  meeting_table: "Meeting Tables",
+  office_suite: "Office Suite",
+  task_seating: "Task Seating",
+  workstation: "Workstations",
 };
 
 // Workstation = 1 per slide; everything else = up to 3
