@@ -19,7 +19,9 @@ cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload    # starts on :8000
 ```
-Requires `.env` in `backend/` with: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_DB_URL`. Optional: `PPTX_ENGINE_PATH` (default `../pptx-engine`), `STORAGE_BUCKET` (default `presentations`), `FRONTEND_URL` (default `http://localhost:3000`), `GEMINI_API_KEY` (for AI space parsing).
+Requires `.env` in `backend/` with: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_DB_URL`. Optional: `PPTX_ENGINE_PATH` (default `../pptx-engine`), `STORAGE_BUCKET` (default `presentations`), `FRONTEND_URL` (default `http://localhost:3000`), `GEMINI_API_KEY` (for AI space parsing), `EXTRA_CORS_ORIGINS` (comma-separated additional allowed origins).
+
+Frontend requires `frontend/.env.local` with: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`.
 
 ### PPTX Engine (Node.js CLI)
 ```bash
@@ -102,6 +104,13 @@ Three-service architecture: **Next.js frontend** → **FastAPI backend** → **N
 
 ## Database
 Four tables: `user_profiles` (PK: `user_id` UUID), `products` (PK: `product_code`), `presentations` (references `user_id`), `presentation_products` (junction table). Migration `002` adds product metadata columns. Migration `003` replaces `consultants` table with `user_profiles` and changes `presentations.consultant_id` to `presentations.user_id`. Schema in `supabase/migrations/`. Backend uses raw SQL via asyncpg with positional parameters (`$1`, `$2`), not an ORM. Helper functions in `backend/app/database.py`: `fetch_one()`, `fetch_all()`, `execute()`.
+
+## Deployment
+- **Backend**: Deployed via Procfile (`uvicorn app.main:app`) — compatible with Heroku/Render. Port set via `$PORT` env var.
+- **Frontend**: Deployed on Vercel. CORS regex in `main.py` allows Vercel preview URLs matching `powerpoint-generator*-kaisong06s-projects.vercel.app`.
+- **Docker**: `docker-compose.yml` runs all three services. The pptx-engine container only builds (no long-running process); the backend mounts it as a volume.
+- Root `package.json` has a `postinstall` script that runs `cd pptx-engine && npm install` — ensures pptx-engine deps are installed on platforms that auto-run `npm install`.
+- `scripts/upload_product_images.py` — utility to bulk-upload product images to Supabase Storage.
 
 ## Important Notes
 - Frontend uses Next.js 16 which has breaking changes from earlier versions. Check `frontend/node_modules/next/dist/docs/` before using Next.js APIs.

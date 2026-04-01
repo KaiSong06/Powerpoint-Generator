@@ -19,63 +19,51 @@ Next.js Frontend  →  FastAPI Backend  →  Node.js PPTX Engine (CLI)
 | **Database** | Supabase (PostgreSQL) | — | Products, consultants, presentations |
 | **Storage** | Supabase Storage | — | Generated PPTX files, floor plans |
 
-## Quick Start
+## Local Setup
 
 ### Prerequisites
 
 - Node.js 20+
 - Python 3.11+
-- Docker & Docker Compose (for containerized setup)
-- A Supabase project ([setup guide](docs/SUPABASE_SETUP.md))
+- A Supabase project (database, storage, and auth already configured)
 
-### 1. Clone and install
+### 1. Install dependencies
 
 ```bash
-git clone <repo-url> && cd envirotech-pptx
 ./scripts/setup.sh
 ```
 
-This copies `.env.example` files, installs npm dependencies (frontend + pptx-engine), and creates the backend Python venv.
+This installs npm dependencies (frontend + pptx-engine), creates the backend Python venv, and copies `.env.example` files if they don't already exist.
 
 ### 2. Configure environment
 
-Fill in your Supabase credentials in two files:
-
-**`backend/.env`** — database, storage, and API key:
+**`backend/.env`**:
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=eyJ...your-service-role-key
-SUPABASE_DB_URL=postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_KEY=<your-service-role-key>
+SUPABASE_DB_URL=<your-pooler-connection-string>
+GEMINI_API_KEY=<your-gemini-key>          # optional, for AI space parsing
 PPTX_ENGINE_PATH=../pptx-engine
 STORAGE_BUCKET=presentations
 FRONTEND_URL=http://localhost:3000
+EXTRA_CORS_ORIGINS=                       # optional, comma-separated
 ```
 
-**`frontend/.env.local`** — public Supabase keys and API URL:
+**`frontend/.env.local`**:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-See [`.env.example`](.env.example) for a complete reference of all variables.
+### 3. Start development
 
-### 3. Set up Supabase
-
-Follow [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) to:
-- Run the database migration (`supabase/migrations/001_initial_schema.sql`)
-- Seed test data (`backend/seed.sql`) — 3 consultants, 22 products across 11 categories
-- Create storage buckets (`presentations`, `floor-plans`)
-- Create an auth user for login
-
-### 4. Start development
-
-**With Docker:**
 ```bash
 ./scripts/dev.sh
 ```
 
-**Without Docker (3 terminals):**
+Or run services separately in two terminals:
+
 ```bash
 # Terminal 1: Backend
 cd backend && source .venv/bin/activate
@@ -87,7 +75,7 @@ cd frontend && npm run dev
 # pptx-engine has no server — it runs as a subprocess of the backend
 ```
 
-### 5. Verify
+### 4. Verify
 
 - **Frontend**: http://localhost:3000
 - **Backend API docs**: http://localhost:8000/docs
@@ -125,13 +113,17 @@ cd frontend && npm run dev
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/health` | Health check |
-| GET | `/api/products` | List all products |
-| GET | `/api/products?category=X` | Filter by category |
-| GET | `/api/consultants` | List consultants |
-| GET | `/api/presentations` | List presentations |
+| GET/POST/PUT | `/api/profile` | Get, create, update current user's profile |
+| GET | `/api/products` | List products (`?category=`, `?search=`) |
+| POST | `/api/products` | Create product |
+| GET/PUT | `/api/products/{code}` | Get or update product |
+| GET | `/api/products/categories` | Distinct category list |
+| GET | `/api/presentations` | List presentations (paginated) |
 | GET | `/api/presentations/{id}` | Presentation detail with products |
 | GET | `/api/presentations/{id}/download` | Signed download URL (1h expiry) |
 | POST | `/api/presentations/generate` | Create + generate PPTX (multipart form) |
+| POST | `/api/presentations/auto-select` | Auto-select products from space breakdown |
+| POST | `/api/presentations/generate-from-brief` | AI-parse brief via Gemini |
 | DELETE | `/api/presentations/{id}` | Delete presentation |
 
 ### Project structure
@@ -192,7 +184,6 @@ cd frontend && npm run dev
 - **No embedded fonts.** The PPTX references Arial and Calibri. The viewer's system substitutes defaults if these aren't installed.
 - **No image upload UI.** Product images are set via the `image_url` database field directly.
 - **Floor plans**: Only PNG and JPG render in slides. PDF floor plans won't be embedded.
-- **No signup flow.** Users must be created in the Supabase dashboard.
 - **No role-based access.** All authenticated users can manage any presentation.
 - **No migration runner.** Schema changes are applied manually via SQL.
 - **Google Slides** may not render all formatting identically (transparency, precise font sizing).
