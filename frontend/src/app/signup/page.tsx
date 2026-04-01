@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import Link from "next/link";
 
@@ -11,8 +12,8 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +41,7 @@ export default function SignupPage() {
       setError(error.message);
       setIsSubmitting(false);
     } else {
-      setSuccess(true);
-      setIsSubmitting(false);
+      router.push("/login");
     }
   };
 
@@ -55,21 +55,7 @@ export default function SignupPage() {
           <p className="text-gray-500 mt-2">Create your account</p>
         </div>
 
-        {success ? (
-          <div className="text-center">
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
-              Account created! Please check your email to confirm your account
-              before signing in.
-            </div>
-            <Link
-              href="/login"
-              className="text-envirotech-red font-medium hover:underline"
-            >
-              Go to Sign In
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
                 {error}
@@ -158,8 +144,7 @@ export default function SignupPage() {
                 Sign In
               </Link>
             </p>
-          </form>
-        )}
+        </form>
       </div>
     </div>
   );
