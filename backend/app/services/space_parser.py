@@ -50,19 +50,19 @@ Output: [{{"space_type":"executive_office","count":2,"capacity":null}},{{"space_
 async def parse_space_brief(brief: str) -> list[SpaceRequest]:
     """Parse a natural language space description into structured SpaceRequest objects.
 
-    Calls the Anthropic API to extract structured data from free text,
+    Calls the Google Gemini API to extract structured data from free text,
     validates the response, and returns a list of SpaceRequest objects.
     """
     settings = get_settings()
 
-    raw_json = await _call_llm(settings.anthropic_api_key, brief)
+    raw_json = await _call_llm(settings.gemini_api_key, brief)
 
     # Validate and parse
     try:
         parsed = json.loads(raw_json)
     except json.JSONDecodeError:
         logger.warning("LLM returned invalid JSON on first attempt, retrying")
-        raw_json = await _call_llm(settings.anthropic_api_key, brief)
+        raw_json = await _call_llm(settings.gemini_api_key, brief)
         try:
             parsed = json.loads(raw_json)
         except json.JSONDecodeError:
@@ -93,34 +93,32 @@ async def parse_space_brief(brief: str) -> list[SpaceRequest]:
 
 
 async def _call_llm(api_key: str, brief: str) -> str:
-    """Call the Anthropic Messages API and return the text content."""
+    """Call the Google Gemini API and return the text content."""
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
+            headers={"content-type": "application/json"},
             json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 1024,
-                "system": SYSTEM_PROMPT,
-                "messages": [{"role": "user", "content": brief}],
+                "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+                "contents": [{"parts": [{"text": brief}]}],
+                "generationConfig": {
+                    "maxOutputTokens": 1024,
+                    "temperature": 0,
+                },
             },
         )
 
     if response.status_code != 200:
-        logger.error("Anthropic API error: %s %s", response.status_code, response.text)
-        raise RuntimeError(f"Anthropic API returned status {response.status_code}")
+        logger.error("Gemini API error: %s %s", response.status_code, response.text)
+        raise RuntimeError(f"Gemini API returned status {response.status_code}")
 
     body = response.json()
-    usage = body.get("usage", {})
+    usage = body.get("usageMetadata", {})
     logger.info(
-        "Anthropic API usage — input_tokens: %s, output_tokens: %s",
-        usage.get("input_tokens"),
-        usage.get("output_tokens"),
+        "Gemini API usage — prompt_tokens: %s, candidates_tokens: %s",
+        usage.get("promptTokenCount"),
+        usage.get("candidatesTokenCount"),
     )
 
-    text = body["content"][0]["text"].strip()
+    text = body["candidates"][0]["content"]["parts"][0]["text"].strip()
     return text

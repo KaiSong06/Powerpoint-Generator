@@ -11,7 +11,7 @@ from app.services.space_parser import parse_space_brief
 def _mock_settings():
     """Prevent Settings from requiring real env vars during tests."""
     fake = MagicMock()
-    fake.anthropic_api_key = "test-key"
+    fake.gemini_api_key = "test-key"
     with patch("app.services.space_parser.get_settings", return_value=fake):
         yield
 
@@ -102,6 +102,6 @@ class TestParseSpaceBrief:
     @pytest.mark.asyncio
     async def test_api_error_raises_runtime_error(self):
         with patch("app.services.space_parser._call_llm", new_callable=AsyncMock) as mock_llm:
-            mock_llm.side_effect = RuntimeError("Anthropic API returned status 500")
+            mock_llm.side_effect = RuntimeError("Gemini API returned status 500")
             with pytest.raises(RuntimeError):
                 await parse_space_brief("anything")

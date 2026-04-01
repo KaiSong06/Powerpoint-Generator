@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     supabase_db_url: str
-    anthropic_api_key: str = ""
+    gemini_api_key: str = ""
     pptx_engine_path: str = "../pptx-engine"
     storage_bucket: str = "presentations"
     frontend_url: str = "http://localhost:3000"
