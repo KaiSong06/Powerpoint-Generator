@@ -15,6 +15,7 @@ from ..schemas.presentation import (
 )
 from ..services.space_parser import parse_space_brief
 from ..schemas.product import ProductOut
+from ..services.brief_parser import BriefParseError, parse_brief
 from ..services.pptx_service import generate_presentation
 from ..services.product_matcher import match_products
 from ..services.storage_service import get_signed_url, upload_file
