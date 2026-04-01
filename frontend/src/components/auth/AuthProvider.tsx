@@ -41,14 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const supabase = createSupabaseBrowserClient();
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (accessToken?: string) => {
     try {
-      const p = await getProfile();
+      const p = await getProfile(accessToken);
       setProfile(p);
       return p;
     } catch {
-      setProfile(null);
-      return null;
+      // Non-404 error (network, 401, CORS, etc.)
+      // Don't clear an existing profile — the API call failed, not the profile
+      return profile;
     }
   };
 
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        await fetchProfile();
+        await fetchProfile(session.access_token);
       }
 
       setIsLoading(false);
@@ -71,14 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        await fetchProfile();
+        await fetchProfile(session.access_token);
       } else {
         setProfile(null);
       }
 
       setIsLoading(false);
 
-      if (!session) {
+      if (!session && !PROFILE_EXEMPT_PATHS.includes(window.location.pathname)) {
         router.push("/login");
       }
     });

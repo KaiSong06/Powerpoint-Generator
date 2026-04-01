@@ -97,8 +97,21 @@ export async function getCategories(): Promise<string[]> {
 
 // ── Profile ─────────────────────────────────────────────────────────────────
 
-export async function getProfile(): Promise<UserProfile> {
-  return apiFetch<UserProfile>("/api/profile");
+export async function getProfile(accessToken?: string): Promise<UserProfile | null> {
+  try {
+    const options: RequestInit = {};
+    if (accessToken) {
+      options.headers = { Authorization: `Bearer ${accessToken}` };
+    }
+    return await apiFetch<UserProfile>("/api/profile", options);
+  } catch (err) {
+    // 404 means profile genuinely doesn't exist
+    if (err instanceof Error && err.message.includes("API error 404")) {
+      return null;
+    }
+    // Re-throw other errors (401, 500, network) so callers can handle them
+    throw err;
+  }
 }
 
 export async function createProfile(data: {
