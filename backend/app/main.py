@@ -27,6 +27,7 @@ if settings.extra_cors_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=r"https://powerpoint-generator(-[a-z0-9]+)?-kaisong06s-projects\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
