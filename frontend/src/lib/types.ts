@@ -32,6 +32,20 @@ export interface Consultant {
   phone: string | null;
 }
 
+export type SpaceType =
+  | "open_workstation"
+  | "private_office"
+  | "executive_office"
+  | "conference_room"
+  | "huddle_room"
+  | "lounge"
+  | "break_area"
+  | "reception";
+
+export type ProductRole = "primary" | "secondary" | "accessory";
+
+export type QuantityRule = "per_workstation" | "per_room" | "per_capacity" | "per_floor";
+
 export interface Product {
   product_code: string;
   name: string;
@@ -40,6 +54,10 @@ export interface Product {
   price: number;
   markup_percent: number | null;
   category: ProductCategory | null;
+  space_type: SpaceType[] | null;
+  product_role: ProductRole | null;
+  capacity: number | null;
+  quantity_rule: QuantityRule | null;
 }
 
 export interface Presentation {

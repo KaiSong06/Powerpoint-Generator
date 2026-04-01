@@ -11,6 +11,10 @@ class ProductCreate(BaseModel):
     price: Decimal
     markup_percent: Decimal | None = None
     category: str | None = None
+    space_type: list[str] | None = None
+    product_role: str | None = None
+    capacity: int | None = None
+    quantity_rule: str | None = None
 
 
 class ProductOut(BaseModel):
@@ -21,6 +25,10 @@ class ProductOut(BaseModel):
     price: Decimal
     markup_percent: Decimal | None = None
     category: str | None = None
+    space_type: list[str] | None = None
+    product_role: str | None = None
+    capacity: int | None = None
+    quantity_rule: str | None = None
 
 
 class ProductFilter(BaseModel):
