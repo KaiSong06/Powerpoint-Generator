@@ -114,7 +114,7 @@ async def generate_from_brief_endpoint(
     """Parse a natural language space brief with AI, auto-select products, and generate a PPTX."""
     # Step 1: AI-parse the brief into structured spaces
     try:
-        space_requests = await parse_space_brief(body.brief)
+        space_requests = await parse_space_brief(body.brief, budget=body.budget)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except RuntimeError as e:

@@ -196,6 +196,7 @@ export async function generateFromBrief(data: {
   office_address: string;
   suite_number?: string;
   sq_ft: number;
+  budget?: number;
 }): Promise<Presentation> {
   return apiFetch<Presentation>("/api/presentations/generate-from-brief", {
     method: "POST",

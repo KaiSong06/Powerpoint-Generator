@@ -44,6 +44,7 @@ class GenerateFromBriefRequest(BaseModel):
     suite_number: str | None = None
     sq_ft: int = Field(..., ge=1)
     brief: str = Field(..., min_length=1, max_length=5000)
+    budget: float | None = Field(None, gt=0)
 
 
 class PresentationCreate(BaseModel):

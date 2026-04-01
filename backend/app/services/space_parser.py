@@ -47,7 +47,7 @@ Output: [{{"space_type":"executive_office","count":2,"capacity":null}},{{"space_
 """
 
 
-async def parse_space_brief(brief: str) -> list[SpaceRequest]:
+async def parse_space_brief(brief: str, budget: float | None = None) -> list[SpaceRequest]:
     """Parse a natural language space description into structured SpaceRequest objects.
 
     Calls the Google Gemini API to extract structured data from free text,
@@ -55,7 +55,11 @@ async def parse_space_brief(brief: str) -> list[SpaceRequest]:
     """
     settings = get_settings()
 
-    raw_json = await _call_llm(settings.gemini_api_key, brief)
+    prompt = brief
+    if budget is not None:
+        prompt = f"{brief}\n\nBudget: ${budget:,.2f}. Keep the space selection within this budget — favor fewer or smaller rooms if needed."
+
+    raw_json = await _call_llm(settings.gemini_api_key, prompt)
 
     # Validate and parse
     try:

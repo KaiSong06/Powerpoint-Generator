@@ -31,6 +31,7 @@ export default function BriefGenerateForm() {
   const [officeAddress, setOfficeAddress] = useState("");
   const [suiteNumber, setSuiteNumber] = useState("");
   const [sqFt, setSqFt] = useState("");
+  const [budget, setBudget] = useState("");
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -84,6 +85,7 @@ export default function BriefGenerateForm() {
         office_address: officeAddress.trim(),
         suite_number: suiteNumber.trim() || undefined,
         sq_ft: Number(sqFt),
+        budget: budget.trim() ? Number(budget) : undefined,
       });
       router.push(`/presentations/${result.id}`);
     } catch (err) {
@@ -207,7 +209,7 @@ export default function BriefGenerateForm() {
                 )}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label
                   htmlFor="brief-suiteNumber"
@@ -241,6 +243,23 @@ export default function BriefGenerateForm() {
                   className={inputClass(
                     validationErrors.some((e) => e.includes("square footage"))
                   )}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="brief-budget"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Budget
+                </label>
+                <input
+                  id="brief-budget"
+                  type="number"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="50000"
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
                 />
               </div>
             </div>
