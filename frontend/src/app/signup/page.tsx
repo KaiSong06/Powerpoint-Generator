@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -40,8 +41,13 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
       setIsSubmitting(false);
+    } else if (data.session) {
+      // Email confirmation disabled — user is logged in, go to home
+      router.push("/");
     } else {
-      router.push("/login");
+      // Email confirmation required — show message
+      setSuccess(true);
+      setIsSubmitting(false);
     }
   };
 
@@ -55,6 +61,19 @@ export default function SignupPage() {
           <p className="text-gray-500 mt-2">Create your account</p>
         </div>
 
+        {success ? (
+          <div className="text-center space-y-4">
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+              Check your email for a confirmation link, then sign in.
+            </div>
+            <Link
+              href="/login"
+              className="inline-block text-envirotech-red font-medium hover:underline"
+            >
+              Go to Sign In
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSignup} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
@@ -145,6 +164,7 @@ export default function SignupPage() {
               </Link>
             </p>
         </form>
+        )}
       </div>
     </div>
   );
