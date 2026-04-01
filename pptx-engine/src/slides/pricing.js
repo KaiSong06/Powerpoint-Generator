@@ -21,9 +21,16 @@ function fmtWhole(val) {
 }
 
 // Max product rows per pricing slide before paginating.
-// 12 rows + header + total = 14 rows × 0.28" = 3.92", starting at y=0.75 ends at ~4.67"
-// leaving ~0.95" of bottom padding before the 5.625" slide edge.
-const MAX_ROWS_PER_SLIDE = 12;
+// Table starts at y=0.75 with rowH=0.28. Slide height is 5.625".
+// Reserve 0.5" bottom padding → usable = 5.625 - 0.75 - 0.5 = 4.375"
+// Subtract header + total rows (2 × 0.28 = 0.56") → 3.815" for product rows
+// 3.815 / 0.28 = 13.6 → floor to 10 for safety (text wrapping can expand rows)
+const TABLE_Y = 0.75;
+const ROW_H = 0.28;
+const TABLE_BOTTOM_PAD = 0.5;
+const MAX_ROWS_PER_SLIDE = Math.floor(
+  (SLIDE.H - TABLE_Y - TABLE_BOTTOM_PAD - 2 * ROW_H) / ROW_H
+);
 
 // ── Layout constants ───────────────────────────────────────────────────────
 const LEFT_X = 0.5;
@@ -328,9 +335,9 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
 
   slide.addTable(tableRows, {
     x: tableX,
-    y: 0.75,
+    y: TABLE_Y,
     colW: colWidths,
-    rowH: 0.28,
+    rowH: ROW_H,
     border: { type: "solid", pt: 0.5, color: "DDDDDD" },
   });
 
