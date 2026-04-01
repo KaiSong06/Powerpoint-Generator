@@ -1,14 +1,7 @@
 -- Seed data for Envirotech PPTX Generator
 -- Run against your Supabase PostgreSQL instance
 
--- Consultants
-INSERT INTO consultants (name, email, phone) VALUES
-  ('Sarah Mitchell', 'sarah.mitchell@envirotech.com', '555-0101'),
-  ('James Park', 'james.park@envirotech.com', '555-0102'),
-  ('Maria Gonzalez', 'maria.gonzalez@envirotech.com', '555-0103'),
-  ('David Chen', 'david.chen@envirotech.com', '555-0104'),
-  ('Emily Rhodes', 'emily.rhodes@envirotech.com', '555-0105')
-ON CONFLICT DO NOTHING;
+-- User profiles are created via the signup flow (no seed data needed)
 
 -- Clear existing products
 DELETE FROM presentation_products;

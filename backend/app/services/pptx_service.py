@@ -26,19 +26,19 @@ async def generate_presentation(presentation_id: int) -> str:
     # 1. Fetch presentation record
     pres = await fetch_one(
         """SELECT id, client_name, office_address, suite_number, sq_ft,
-                  floor_plan_url, consultant_id
+                  floor_plan_url, user_id
            FROM presentations WHERE id = $1""",
         presentation_id,
     )
     if not pres:
         raise ValueError(f"Presentation {presentation_id} not found")
 
-    # 2. Fetch consultant
+    # 2. Fetch consultant info from user profile
     consultant = None
-    if pres["consultant_id"]:
+    if pres["user_id"]:
         c_row = await fetch_one(
-            "SELECT name, email, phone FROM consultants WHERE id = $1",
-            pres["consultant_id"],
+            "SELECT name, email, phone FROM user_profiles WHERE user_id = $1",
+            pres["user_id"],
         )
         if c_row:
             consultant = dict(c_row)

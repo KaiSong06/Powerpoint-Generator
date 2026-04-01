@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { generateFromBrief, getConsultants } from "@/lib/api";
-import type { Consultant } from "@/lib/types";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { generateFromBrief } from "@/lib/api";
 
 const PROGRESS_MESSAGES = [
   "Analyzing your brief...",
@@ -27,18 +25,12 @@ const PLACEHOLDER_BRIEF = `Example:
 export default function BriefGenerateForm() {
   const router = useRouter();
 
-  // Reference data
-  const [consultants, setConsultants] = useState<Consultant[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
   // Form state
   const [brief, setBrief] = useState("");
   const [clientName, setClientName] = useState("");
   const [officeAddress, setOfficeAddress] = useState("");
   const [suiteNumber, setSuiteNumber] = useState("");
   const [sqFt, setSqFt] = useState("");
-  const [consultantId, setConsultantId] = useState<number | null>(null);
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -46,23 +38,6 @@ export default function BriefGenerateForm() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [progressIdx, setProgressIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getConsultants()
-      .then((c) => {
-        if (!cancelled) setConsultants(c);
-      })
-      .catch((err) => {
-        if (!cancelled) setLoadError(err.message || "Failed to load consultants");
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingData(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Progress message rotation
   useEffect(() => {
@@ -89,7 +64,6 @@ export default function BriefGenerateForm() {
     if (!officeAddress.trim()) errors.push("Office address is required");
     if (!sqFt.trim() || isNaN(Number(sqFt)) || Number(sqFt) <= 0)
       errors.push("Valid square footage is required");
-    if (!consultantId) errors.push("Consultant is required");
     return errors;
   }
 
@@ -110,7 +84,6 @@ export default function BriefGenerateForm() {
         office_address: officeAddress.trim(),
         suite_number: suiteNumber.trim() || undefined,
         sq_ft: Number(sqFt),
-        consultant_id: consultantId!,
       });
       router.push(`/presentations/${result.id}`);
     } catch (err) {
@@ -124,44 +97,6 @@ export default function BriefGenerateForm() {
     `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent ${
       hasError ? "border-red-400" : "border-gray-300"
     }`;
-
-  if (isLoadingData) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-3xl">
-        <Skeleton className="h-6 w-48 mb-4" />
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i}>
-              <Skeleton className="h-4 w-24 mb-1" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-        <p>Failed to load data: {loadError}</p>
-        <button
-          onClick={() => {
-            setIsLoadingData(true);
-            setLoadError(null);
-            getConsultants()
-              .then((c) => setConsultants(c))
-              .catch((err) => setLoadError(err.message))
-              .finally(() => setIsLoadingData(false));
-          }}
-          className="mt-2 text-red-800 font-medium underline text-xs"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -234,13 +169,6 @@ export default function BriefGenerateForm() {
           <h2 className="text-lg font-bold text-envirotech-charcoal mb-4">
             Client Information
           </h2>
-
-          {consultants.length === 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
-              No consultants available. Please add consultants before creating a
-              presentation.
-            </div>
-          )}
 
           <div className="space-y-4">
             <div>
@@ -315,32 +243,6 @@ export default function BriefGenerateForm() {
                   )}
                 />
               </div>
-            </div>
-            <div>
-              <label
-                htmlFor="brief-consultantId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Consultant <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="brief-consultantId"
-                value={consultantId ?? ""}
-                onChange={(e) =>
-                  setConsultantId(e.target.value ? Number(e.target.value) : null)
-                }
-                className={`${inputClass(
-                  validationErrors.some((e) => e.includes("Consultant"))
-                )} bg-white`}
-              >
-                <option value="">Select a consultant...</option>
-                {consultants.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {c.email ? ` (${c.email})` : ""}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>

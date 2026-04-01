@@ -1,12 +1,10 @@
 "use client";
 
-import type { Consultant } from "@/lib/types";
 import type { WizardData } from "./StepWizard";
 
 interface ClientInfoStepProps {
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
-  consultants: Consultant[];
   touched: Record<string, boolean>;
   onBlur: (field: string) => void;
 }
@@ -27,8 +25,6 @@ function getFieldError(
       if (isNaN(Number(data.sqFt)) || Number(data.sqFt) <= 0)
         return "Enter a valid number";
       return null;
-    case "consultantId":
-      return data.consultantId ? null : "Please select a consultant";
     default:
       return null;
   }
@@ -37,7 +33,6 @@ function getFieldError(
 export default function ClientInfoStep({
   data,
   updateData,
-  consultants,
   touched,
   onBlur,
 }: ClientInfoStepProps) {
@@ -52,13 +47,6 @@ export default function ClientInfoStep({
       <h2 className="text-lg font-bold text-envirotech-charcoal mb-4">
         Client Information
       </h2>
-
-      {consultants.length === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
-          No consultants available. Please add consultants before creating a
-          presentation.
-        </div>
-      )}
 
       <div className="space-y-4">
         <div>
@@ -153,42 +141,6 @@ export default function ClientInfoStep({
               </p>
             )}
           </div>
-        </div>
-        <div>
-          <label
-            htmlFor="consultantId"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Consultant <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="consultantId"
-            value={data.consultantId ?? ""}
-            onChange={(e) =>
-              updateData({
-                consultantId: e.target.value ? Number(e.target.value) : null,
-              })
-            }
-            onBlur={() => onBlur("consultantId")}
-            aria-invalid={!!err("consultantId")}
-            aria-describedby={
-              err("consultantId") ? "consultantId-error" : undefined
-            }
-            className={`${inputClass("consultantId")} bg-white`}
-          >
-            <option value="">Select a consultant...</option>
-            {consultants.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.email ? ` (${c.email})` : ""}
-              </option>
-            ))}
-          </select>
-          {err("consultantId") && (
-            <p id="consultantId-error" className="text-red-500 text-xs mt-1">
-              {err("consultantId")}
-            </p>
-          )}
         </div>
       </div>
     </div>

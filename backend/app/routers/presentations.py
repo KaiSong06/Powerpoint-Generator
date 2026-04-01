@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
 from ..middleware.auth import AuthUser, get_current_user
-from ..schemas.consultant import ConsultantOut
 from ..schemas.presentation import (
     AutoSelectRequest,
+    ConsultantInfo,
     GenerateFromBriefRequest,
     PresentationDetail,
     PresentationOut,
@@ -60,20 +60,6 @@ async def auto_select_endpoint(
             detail="No products matched the given space breakdown",
         )
 
-    # Resolve consultant
-    consultant_id = body.consultant_id
-    if consultant_id is None:
-        c_row = await fetch_one(
-            "SELECT id FROM consultants WHERE email = $1",
-            user.email,
-        )
-        if not c_row:
-            raise HTTPException(
-                status_code=400,
-                detail="No consultant_id provided and no consultant matches your email",
-            )
-        consultant_id = c_row["id"]
-
     # Create presentation + product associations in a transaction
     product_items = [
         {"product_code": s["product_code"], "quantity": s["quantity"]}
@@ -84,14 +70,14 @@ async def auto_select_endpoint(
         async with conn.transaction():
             row = await conn.fetchrow(
                 """INSERT INTO presentations
-                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count)
+                   (client_name, office_address, suite_number, sq_ft, user_id, product_count)
                    VALUES ($1, $2, $3, $4, $5, $6)
                    RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
                 body.client_name,
                 body.office_address,
                 body.suite_number,
                 body.sq_ft,
-                consultant_id,
+                user.id,
                 len(product_items),
             )
 
@@ -147,21 +133,7 @@ async def generate_from_brief_endpoint(
             detail="No products matched the parsed space breakdown",
         )
 
-    # Step 3: Resolve consultant
-    consultant_id = body.consultant_id
-    if consultant_id is None:
-        c_row = await fetch_one(
-            "SELECT id FROM consultants WHERE email = $1",
-            user.email,
-        )
-        if not c_row:
-            raise HTTPException(
-                status_code=400,
-                detail="No consultant_id provided and no consultant matches your email",
-            )
-        consultant_id = c_row["id"]
-
-    # Step 4: Create presentation + product associations in a transaction
+    # Step 3: Create presentation + product associations in a transaction
     product_items = [
         {"product_code": s["product_code"], "quantity": s["quantity"]}
         for s in selections
@@ -171,14 +143,14 @@ async def generate_from_brief_endpoint(
         async with conn.transaction():
             row = await conn.fetchrow(
                 """INSERT INTO presentations
-                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count)
+                   (client_name, office_address, suite_number, sq_ft, user_id, product_count)
                    VALUES ($1, $2, $3, $4, $5, $6)
                    RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
                 body.client_name,
                 body.office_address,
                 body.suite_number,
                 body.sq_ft,
-                consultant_id,
+                user.id,
                 len(product_items),
             )
 
@@ -191,7 +163,7 @@ async def generate_from_brief_endpoint(
                     item["quantity"],
                 )
 
-    # Step 5: Generate PPTX and upload
+    # Step 4: Generate PPTX and upload
     presentation_id = row["id"]
     try:
         await generate_presentation(presentation_id)
@@ -211,7 +183,7 @@ async def generate_from_brief_endpoint(
 async def get_presentation(presentation_id: int, _user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         """SELECT id, file_url, file_name, client_name, office_address, product_count,
-                  sq_ft, generated_at, suite_number, floor_plan_url, consultant_id
+                  sq_ft, generated_at, suite_number, floor_plan_url, user_id
            FROM presentations WHERE id = $1""",
         presentation_id,
     )
@@ -219,17 +191,17 @@ async def get_presentation(presentation_id: int, _user: AuthUser = Depends(get_c
         raise HTTPException(status_code=404, detail="Presentation not found")
 
     data = dict(row)
-    consultant_id = data.pop("consultant_id", None)
+    user_id = data.pop("user_id", None)
 
-    # Fetch consultant
+    # Fetch consultant info from user profile
     consultant = None
-    if consultant_id:
-        c_row = await fetch_one(
-            "SELECT id, name, email, phone FROM consultants WHERE id = $1",
-            consultant_id,
+    if user_id:
+        profile_row = await fetch_one(
+            "SELECT name, email, phone FROM user_profiles WHERE user_id = $1",
+            user_id,
         )
-        if c_row:
-            consultant = ConsultantOut(**dict(c_row))
+        if profile_row:
+            consultant = ConsultantInfo(**dict(profile_row))
 
     # Fetch products
     product_rows = await fetch_all(
@@ -251,7 +223,6 @@ async def generate_presentation_endpoint(
     office_address: str = Form(...),
     suite_number: str = Form(None),
     sq_ft: int = Form(...),
-    consultant_id: int | None = Form(None),
     products: str = Form(..., description='JSON array: [{"product_code": "...", "quantity": 1}]'),
     floor_plan: UploadFile | None = File(None),
     user: AuthUser = Depends(get_current_user),
@@ -281,19 +252,6 @@ async def generate_presentation_endpoint(
             detail=f"Product codes not found: {', '.join(missing)}",
         )
 
-    # Auto-detect consultant from auth user email if not explicitly provided
-    if consultant_id is None:
-        c_row = await fetch_one(
-            "SELECT id FROM consultants WHERE email = $1",
-            user.email,
-        )
-        if not c_row:
-            raise HTTPException(
-                status_code=400,
-                detail="No consultant_id provided and no consultant matches your email",
-            )
-        consultant_id = c_row["id"]
-
     # Upload floor plan if provided
     floor_plan_url = None
     if floor_plan and floor_plan.filename:
@@ -316,14 +274,14 @@ async def generate_presentation_endpoint(
         async with conn.transaction():
             row = await conn.fetchrow(
                 """INSERT INTO presentations
-                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count, floor_plan_url)
+                   (client_name, office_address, suite_number, sq_ft, user_id, product_count, floor_plan_url)
                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                    RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
                 client_name,
                 office_address,
                 suite_number,
                 sq_ft,
-                consultant_id,
+                user.id,
                 len(product_items),
                 floor_plan_url,
             )

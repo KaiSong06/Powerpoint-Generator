@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Fragment } from "react";
-import { getConsultants, getProducts, getCategories } from "@/lib/api";
-import type { Product, Consultant } from "@/lib/types";
+import { getProducts, getCategories } from "@/lib/api";
+import type { Product } from "@/lib/types";
 import ClientInfoStep from "./ClientInfoStep";
 import ProductSelectStep from "./ProductSelectStep";
 import FloorPlanUpload from "./FloorPlanUpload";
@@ -20,7 +20,6 @@ export interface WizardData {
   officeAddress: string;
   suiteNumber: string;
   sqFt: string;
-  consultantId: number | null;
   selectedProducts: SelectedProduct[];
   floorPlanFile: File | null;
   floorPlanPreview: string | null;
@@ -35,7 +34,6 @@ export default function StepWizard() {
   const stepContentRef = useRef<HTMLDivElement>(null);
 
   // Reference data
-  const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -47,7 +45,6 @@ export default function StepWizard() {
     officeAddress: "",
     suiteNumber: "",
     sqFt: "",
-    consultantId: null,
     selectedProducts: [],
     floorPlanFile: null,
     floorPlanPreview: null,
@@ -57,10 +54,9 @@ export default function StepWizard() {
     let cancelled = false;
     setLoadError(null);
 
-    Promise.all([getConsultants(), getProducts(), getCategories()])
-      .then(([c, p, cats]) => {
+    Promise.all([getProducts(), getCategories()])
+      .then(([p, cats]) => {
         if (cancelled) return;
-        setConsultants(c);
         setProducts(p);
         setCategories(cats);
       })
@@ -98,7 +94,6 @@ export default function StepWizard() {
           Number(data.sqFt) <= 0
         )
           errors.push("Valid square footage is required");
-        if (!data.consultantId) errors.push("Consultant is required");
         break;
       case 1:
         if (data.selectedProducts.length === 0)
@@ -118,7 +113,6 @@ export default function StepWizard() {
           clientName: true,
           officeAddress: true,
           sqFt: true,
-          consultantId: true,
         });
       }
       return;
@@ -194,9 +188,8 @@ export default function StepWizard() {
           onClick={() => {
             setIsLoadingData(true);
             setLoadError(null);
-            Promise.all([getConsultants(), getProducts(), getCategories()])
-              .then(([c, p, cats]) => {
-                setConsultants(c);
+            Promise.all([getProducts(), getCategories()])
+              .then(([p, cats]) => {
                 setProducts(p);
                 setCategories(cats);
               })
@@ -271,7 +264,6 @@ export default function StepWizard() {
           <ClientInfoStep
             data={data}
             updateData={updateData}
-            consultants={consultants}
             touched={touched}
             onBlur={handleBlur}
           />
@@ -287,9 +279,7 @@ export default function StepWizard() {
         {currentStep === 2 && (
           <FloorPlanUpload data={data} updateData={updateData} />
         )}
-        {currentStep === 3 && (
-          <ReviewStep data={data} consultants={consultants} />
-        )}
+        {currentStep === 3 && <ReviewStep data={data} />}
       </div>
 
       {/* Navigation */}

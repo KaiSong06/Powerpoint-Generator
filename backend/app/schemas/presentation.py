@@ -3,7 +3,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from .consultant import ConsultantOut
 from .product import ProductOut
 
 
@@ -36,7 +35,6 @@ class AutoSelectRequest(BaseModel):
     office_address: str
     suite_number: str | None = None
     sq_ft: int = Field(..., ge=1)
-    consultant_id: int | None = None
     spaces: list[SpaceRequest] = Field(..., min_length=1)
 
 
@@ -45,7 +43,6 @@ class GenerateFromBriefRequest(BaseModel):
     office_address: str
     suite_number: str | None = None
     sq_ft: int = Field(..., ge=1)
-    consultant_id: int | None = None
     brief: str = Field(..., min_length=1, max_length=5000)
 
 
@@ -54,8 +51,13 @@ class PresentationCreate(BaseModel):
     office_address: str
     suite_number: str | None = None
     sq_ft: int
-    consultant_id: int
     products: list[ProductItem]
+
+
+class ConsultantInfo(BaseModel):
+    name: str
+    email: str | None = None
+    phone: str | None = None
 
 
 class PresentationOut(BaseModel):
@@ -73,4 +75,4 @@ class PresentationDetail(PresentationOut):
     suite_number: str | None = None
     floor_plan_url: str | None = None
     products: list[ProductOut] = []
-    consultant: ConsultantOut | None = None
+    consultant: ConsultantInfo | None = None

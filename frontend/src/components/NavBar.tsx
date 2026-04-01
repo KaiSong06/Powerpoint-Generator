@@ -8,7 +8,7 @@ export default function NavBar() {
   const { user, isLoading, signOut } = useAuth();
   const pathname = usePathname();
 
-  if (pathname === "/login") return null;
+  if (pathname === "/login" || pathname === "/signup" || pathname === "/complete-profile") return null;
 
   return (
     <nav className="bg-envirotech-charcoal text-white px-4 sm:px-6 py-3">
@@ -33,6 +33,14 @@ export default function NavBar() {
               }`}
             >
               Create
+            </Link>
+            <Link
+              href="/settings"
+              className={`hover:text-envirotech-red transition-colors ${
+                pathname === "/settings" ? "text-envirotech-red" : ""
+              }`}
+            >
+              Settings
             </Link>
           </div>
         </div>

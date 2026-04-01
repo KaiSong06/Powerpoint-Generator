@@ -82,7 +82,7 @@ function addProductSlides(pres, data) {
       const subtitle = [
         { text: `${catLabel} `, options: { color: COLORS.TEXT_DARK, fontFace: FONTS.BODY, fontSize: 11, bold: true } },
         { text: "| ", options: { color: COLORS.TEXT_DARK, fontFace: FONTS.BODY, fontSize: 11 } },
-        { text: firstProduct.name, options: { color: COLORS.PRIMARY_RED, fontFace: FONTS.BODY, fontSize: 11 } },
+        { text: catLabel, options: { color: COLORS.PRIMARY_RED, fontFace: FONTS.BODY, fontSize: 11 } },
       ];
       slide.addText(subtitle, {
         x: 0.5,

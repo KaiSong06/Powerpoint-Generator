@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import close_pool, create_pool
-from .routers import consultants, presentations, products
+from .routers import presentations, products, profile
 
 
 @asynccontextmanager
@@ -27,9 +27,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(consultants.router)
 app.include_router(products.router)
 app.include_router(presentations.router)
+app.include_router(profile.router)
 
 
 @app.get("/health")

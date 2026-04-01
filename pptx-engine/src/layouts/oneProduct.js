@@ -34,7 +34,7 @@ function layoutOneProduct(slide, products, floorPlanUrl) {
     x: 0.5,
     y: 3.2,
     w: 4.2,
-    h: 0.3,
+    h: 0.5,
     color: COLORS.TEXT_DARK,
     fontFace: FONTS.HEADER,
     fontSize: 14,
@@ -45,7 +45,7 @@ function layoutOneProduct(slide, products, floorPlanUrl) {
   // Thin underline below name
   slide.addShape("line", {
     x: 0.5,
-    y: 3.5,
+    y: 3.7,
     w: 2.5,
     h: 0,
     line: { color: COLORS.TEXT_DARK, width: 0.5 },
@@ -54,7 +54,7 @@ function layoutOneProduct(slide, products, floorPlanUrl) {
   // "Specifications:" label
   slide.addText("Specifications:", {
     x: 0.5,
-    y: 3.6,
+    y: 3.8,
     w: 4.2,
     h: 0.22,
     color: COLORS.TEXT_DARK,
@@ -68,7 +68,7 @@ function layoutOneProduct(slide, products, floorPlanUrl) {
   if (specItems.length > 0) {
     slide.addText(specItems, {
       x: 0.5,
-      y: 3.85,
+      y: 4.05,
       w: 4.0,
       h: 1.2,
       valign: "top",
@@ -79,7 +79,7 @@ function layoutOneProduct(slide, products, floorPlanUrl) {
   // "Warranty" in red at bottom of specs
   slide.addText("Warranty", {
     x: 0.5,
-    y: 5.1,
+    y: 5.3,
     w: 2.0,
     h: 0.2,
     color: COLORS.PRIMARY_RED,

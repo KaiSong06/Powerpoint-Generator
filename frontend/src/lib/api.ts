@@ -1,9 +1,9 @@
 import { createSupabaseBrowserClient } from "./supabase";
 import type {
   Product,
-  Consultant,
   Presentation,
   PresentationProduct,
+  UserProfile,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -95,10 +95,30 @@ export async function getCategories(): Promise<string[]> {
   return apiFetch<string[]>("/api/products/categories");
 }
 
-// ── Consultants ──────────────────────────────────────────────────────────────
+// ── Profile ─────────────────────────────────────────────────────────────────
 
-export async function getConsultants(): Promise<Consultant[]> {
-  return apiFetch<Consultant[]>("/api/consultants");
+export async function getProfile(): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/api/profile");
+}
+
+export async function createProfile(data: {
+  name: string;
+  phone?: string;
+}): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/api/profile", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateProfile(data: {
+  name: string;
+  phone?: string;
+}): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/api/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 }
 
 // ── Presentations ────────────────────────────────────────────────────────────
@@ -136,7 +156,6 @@ export async function generatePresentation(data: {
   office_address: string;
   suite_number?: string;
   sq_ft: number;
-  consultant_id: number;
   products: { product_code: string; quantity: number }[];
   floor_plan?: File | null;
 }): Promise<Presentation> {
@@ -147,7 +166,6 @@ export async function generatePresentation(data: {
   formData.append("office_address", data.office_address);
   if (data.suite_number) formData.append("suite_number", data.suite_number);
   formData.append("sq_ft", String(data.sq_ft));
-  formData.append("consultant_id", String(data.consultant_id));
   formData.append("products", JSON.stringify(data.products));
   if (data.floor_plan) formData.append("floor_plan", data.floor_plan);
 
@@ -178,7 +196,6 @@ export async function generateFromBrief(data: {
   office_address: string;
   suite_number?: string;
   sq_ft: number;
-  consultant_id: number;
 }): Promise<Presentation> {
   return apiFetch<Presentation>("/api/presentations/generate-from-brief", {
     method: "POST",

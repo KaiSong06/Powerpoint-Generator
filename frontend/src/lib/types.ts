@@ -9,7 +9,7 @@ export type ProductCategory =
   | "workstation";
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  cafe_furniture: "Café Furniture",
+  cafe_furniture: "Cafe Furniture",
   conference_seating: "Conference Seating",
   guest_seating: "Guest Seating",
   lounge: "Lounge",
@@ -19,8 +19,14 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   workstation: "Workstations",
 };
 
-export interface Consultant {
-  id: number;
+export interface UserProfile {
+  user_id: string;
+  email: string;
+  name: string;
+  phone: string | null;
+}
+
+export interface ConsultantInfo {
   name: string;
   email: string | null;
   phone: string | null;
@@ -66,7 +72,7 @@ export interface Presentation {
   generated_at: string | null;
   suite_number?: string | null;
   floor_plan_url?: string | null;
-  consultant?: Consultant | null;
+  consultant?: ConsultantInfo | null;
   products?: Product[];
 }
 
@@ -82,6 +88,5 @@ export interface CreatePresentationRequest {
   office_address: string;
   suite_number?: string;
   sq_ft: number;
-  consultant_id?: number;
   products: { product_code: string; quantity: number }[];
 }

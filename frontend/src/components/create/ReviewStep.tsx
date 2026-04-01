@@ -3,12 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { generatePresentation } from "@/lib/api";
-import { CATEGORY_LABELS, type ProductCategory, type Consultant } from "@/lib/types";
+import { CATEGORY_LABELS, type ProductCategory } from "@/lib/types";
 import type { WizardData } from "./StepWizard";
 
 interface ReviewStepProps {
   data: WizardData;
-  consultants: Consultant[];
 }
 
 const PROGRESS_MESSAGES = [
@@ -19,16 +18,12 @@ const PROGRESS_MESSAGES = [
   "Almost there...",
 ];
 
-export default function ReviewStep({ data, consultants }: ReviewStepProps) {
+export default function ReviewStep({ data }: ReviewStepProps) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressIdx, setProgressIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const selectedConsultant = consultants.find(
-    (c) => c.id === data.consultantId
-  );
 
   const totalCost = data.selectedProducts.reduce((sum, sp) => {
     const markup = sp.product.markup_percent || 0;
@@ -57,7 +52,6 @@ export default function ReviewStep({ data, consultants }: ReviewStepProps) {
   }, [isGenerating]);
 
   async function handleGenerate() {
-    if (!data.consultantId) return;
     setIsGenerating(true);
     setError(null);
     try {
@@ -66,7 +60,6 @@ export default function ReviewStep({ data, consultants }: ReviewStepProps) {
         office_address: data.officeAddress,
         suite_number: data.suiteNumber || undefined,
         sq_ft: sqFt,
-        consultant_id: data.consultantId,
         products: data.selectedProducts.map((sp) => ({
           product_code: sp.product_code,
           quantity: sp.quantity,
@@ -130,10 +123,6 @@ export default function ReviewStep({ data, consultants }: ReviewStepProps) {
             )}
             <dt className="text-gray-500">Sq Ft:</dt>
             <dd className="font-medium">{sqFt.toLocaleString()}</dd>
-            <dt className="text-gray-500">Consultant:</dt>
-            <dd className="font-medium">
-              {selectedConsultant?.name || "\u2014"}
-            </dd>
           </dl>
         </div>
 
