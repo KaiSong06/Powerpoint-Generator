@@ -28,9 +28,7 @@ function fmtWhole(val) {
 const TABLE_Y = 0.75;
 const ROW_H = 0.28;
 const TABLE_BOTTOM_PAD = 0.5;
-const MAX_ROWS_PER_SLIDE = Math.floor(
-  (SLIDE.H - TABLE_Y - TABLE_BOTTOM_PAD - 2 * ROW_H) / ROW_H
-);
+const MAX_ROWS_PER_SLIDE = 9;
 
 // ── Layout constants ───────────────────────────────────────────────────────
 const LEFT_X = 0.5;

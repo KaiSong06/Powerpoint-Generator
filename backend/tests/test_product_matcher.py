@@ -3,7 +3,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.services.product_matcher import _calculate_quantity, _select_best_capacity_matches, match_products
+from app.services.product_matcher import (
+    _calculate_quantity,
+    _select_best_capacity_matches,
+    _trim_to_budget,
+    match_products,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -94,15 +99,74 @@ class TestSelectBestCapacityMatches:
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for _trim_to_budget
+# ---------------------------------------------------------------------------
+
+class TestTrimToBudget:
+    def test_under_budget_keeps_all(self):
+        selections = [
+            {"product_code": "A", "quantity": 1, "unit_price": 100, "product_role": "primary"},
+            {"product_code": "B", "quantity": 1, "unit_price": 50, "product_role": "accessory"},
+        ]
+        result = _trim_to_budget(selections, budget=200)
+        assert len(result) == 2
+
+    def test_removes_accessories_first(self):
+        selections = [
+            {"product_code": "A", "quantity": 1, "unit_price": 100, "product_role": "primary"},
+            {"product_code": "B", "quantity": 1, "unit_price": 80, "product_role": "secondary"},
+            {"product_code": "C", "quantity": 1, "unit_price": 50, "product_role": "accessory"},
+        ]
+        # Total = 230, budget = 190 -> remove accessory (50) -> 180 <= 190
+        result = _trim_to_budget(selections, budget=190)
+        codes = {r["product_code"] for r in result}
+        assert "C" not in codes
+        assert "A" in codes
+        assert "B" in codes
+
+    def test_removes_secondary_before_primary(self):
+        selections = [
+            {"product_code": "A", "quantity": 1, "unit_price": 100, "product_role": "primary"},
+            {"product_code": "B", "quantity": 1, "unit_price": 80, "product_role": "secondary"},
+        ]
+        # Total = 180, budget = 110 -> remove secondary -> 100 <= 110
+        result = _trim_to_budget(selections, budget=110)
+        assert len(result) == 1
+        assert result[0]["product_code"] == "A"
+
+    def test_removes_most_expensive_within_same_priority(self):
+        selections = [
+            {"product_code": "A", "quantity": 1, "unit_price": 100, "product_role": "primary"},
+            {"product_code": "B", "quantity": 10, "unit_price": 20, "product_role": "accessory"},  # line cost 200
+            {"product_code": "C", "quantity": 1, "unit_price": 30, "product_role": "accessory"},   # line cost 30
+        ]
+        # Total = 330, budget = 140 -> remove B (accessory, 200) first -> 130 <= 140
+        result = _trim_to_budget(selections, budget=140)
+        codes = {r["product_code"] for r in result}
+        assert "B" not in codes
+        assert "A" in codes
+        assert "C" in codes
+
+    def test_budget_too_low_returns_empty(self):
+        selections = [
+            {"product_code": "A", "quantity": 1, "unit_price": 100, "product_role": "primary"},
+        ]
+        result = _trim_to_budget(selections, budget=50)
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
 # Integration-style tests for match_products (with mocked DB)
 # ---------------------------------------------------------------------------
 
 def _make_record(data: dict):
     """Simulate an asyncpg Record that supports dict() and key access."""
+    defaults = {"price": 100, "markup_percent": 0}
+    defaults.update(data)
     class FakeRecord(dict):
         def __getitem__(self, key):
             return super().__getitem__(key)
-    return FakeRecord(data)
+    return FakeRecord(defaults)
 
 
 class TestMatchProducts:
@@ -114,12 +178,16 @@ class TestMatchProducts:
                 "product_role": "primary",
                 "capacity": None,
                 "quantity_rule": "per_workstation",
+                "price": 500,
+                "markup_percent": 0,
             }),
             _make_record({
                 "product_code": "CHAIR-001",
                 "product_role": "secondary",
                 "capacity": None,
                 "quantity_rule": "per_workstation",
+                "price": 200,
+                "markup_percent": 0,
             }),
         ]
 
@@ -133,6 +201,9 @@ class TestMatchProducts:
         by_code = {r["product_code"]: r for r in result}
         assert by_code["DESK-001"]["quantity"] == 30
         assert by_code["CHAIR-001"]["quantity"] == 30
+        # Internal fields should be stripped
+        assert "unit_price" not in by_code["DESK-001"]
+        assert "product_role" not in by_code["DESK-001"]
 
     @pytest.mark.asyncio
     async def test_per_capacity_rule(self):
@@ -206,3 +277,119 @@ class TestMatchProducts:
 
         assert len(result) == 1
         assert result[0]["quantity"] == 25  # 20 + 5
+
+    @pytest.mark.asyncio
+    async def test_budget_none_returns_all(self):
+        mock_rows = [
+            _make_record({
+                "product_code": "DESK-001",
+                "product_role": "primary",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 500,
+                "markup_percent": 0,
+            }),
+            _make_record({
+                "product_code": "ACC-001",
+                "product_role": "accessory",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 50,
+                "markup_percent": 0,
+            }),
+        ]
+
+        with patch("app.services.product_matcher.fetch_all", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = mock_rows
+            result = await match_products(
+                [{"space_type": "open_workstation", "count": 10}],
+                budget=None,
+            )
+
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_budget_trims_low_priority_first(self):
+        mock_rows = [
+            _make_record({
+                "product_code": "DESK-001",
+                "product_role": "primary",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 500,
+                "markup_percent": 0,
+            }),
+            _make_record({
+                "product_code": "ACC-001",
+                "product_role": "accessory",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 50,
+                "markup_percent": 0,
+            }),
+        ]
+
+        with patch("app.services.product_matcher.fetch_all", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = mock_rows
+            # 10 desks @ $500 = $5000, 10 accessories @ $50 = $500, total = $5500
+            # Budget $5100 -> trim accessories ($500) -> $5000 <= $5100
+            result = await match_products(
+                [{"space_type": "open_workstation", "count": 10}],
+                budget=5100,
+            )
+
+        assert len(result) == 1
+        assert result[0]["product_code"] == "DESK-001"
+
+    @pytest.mark.asyncio
+    async def test_budget_high_enough_keeps_all(self):
+        mock_rows = [
+            _make_record({
+                "product_code": "DESK-001",
+                "product_role": "primary",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 500,
+                "markup_percent": 0,
+            }),
+            _make_record({
+                "product_code": "ACC-001",
+                "product_role": "accessory",
+                "capacity": None,
+                "quantity_rule": "per_workstation",
+                "price": 50,
+                "markup_percent": 0,
+            }),
+        ]
+
+        with patch("app.services.product_matcher.fetch_all", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = mock_rows
+            result = await match_products(
+                [{"space_type": "open_workstation", "count": 10}],
+                budget=100000,
+            )
+
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_budget_with_markup(self):
+        mock_rows = [
+            _make_record({
+                "product_code": "DESK-001",
+                "product_role": "primary",
+                "capacity": None,
+                "quantity_rule": "per_room",
+                "price": 100,
+                "markup_percent": 50,  # effective price = $150
+            }),
+        ]
+
+        with patch("app.services.product_matcher.fetch_all", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = mock_rows
+            # 2 rooms * $150 = $300, budget $200 -> trimmed
+            result = await match_products(
+                [{"space_type": "private_office", "count": 2}],
+                budget=200,
+            )
+
+        assert result == []
