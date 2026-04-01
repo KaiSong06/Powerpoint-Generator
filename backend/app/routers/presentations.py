@@ -7,8 +7,9 @@ from ..config import get_settings
 from ..database import execute, fetch_all, fetch_one, get_pool
 from ..middleware.auth import AuthUser, get_current_user
 from ..schemas.consultant import ConsultantOut
-from ..schemas.presentation import AutoSelectRequest, PresentationDetail, PresentationOut
+from ..schemas.presentation import AutoSelectRequest, GenerateFromBriefRequest, PresentationDetail, PresentationOut
 from ..schemas.product import ProductOut
+from ..services.brief_parser import BriefParseError, parse_brief
 from ..services.pptx_service import generate_presentation
 from ..services.product_matcher import match_products
 from ..services.storage_service import get_signed_url, upload_file
@@ -105,6 +106,90 @@ async def auto_select_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
     # Re-fetch the updated record
+    updated = await fetch_one(
+        """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
+           FROM presentations WHERE id = $1""",
+        presentation_id,
+    )
+    return dict(updated)
+
+
+@router.post("/generate-from-brief", response_model=PresentationOut, status_code=201)
+async def generate_from_brief_endpoint(
+    body: GenerateFromBriefRequest,
+    user: AuthUser = Depends(get_current_user),
+):
+    """Parse a natural-language brief with AI, auto-select products, and generate a PPTX."""
+    # Step 1: AI parses the brief into structured spaces
+    try:
+        spaces = await parse_brief(body.brief)
+    except BriefParseError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    # Step 2: Match products deterministically
+    selections = await match_products(spaces)
+
+    if not selections:
+        # Build a helpful message listing which space types had no matches
+        space_types = [s["space_type"] for s in spaces]
+        raise HTTPException(
+            status_code=400,
+            detail=f"No products matched the parsed spaces: {', '.join(space_types)}. "
+            "Check that products have the correct space_type metadata.",
+        )
+
+    # Step 3: Resolve consultant
+    consultant_id = body.consultant_id
+    if consultant_id is None:
+        c_row = await fetch_one(
+            "SELECT id FROM consultants WHERE email = $1",
+            user.email,
+        )
+        if not c_row:
+            raise HTTPException(
+                status_code=400,
+                detail="No consultant_id provided and no consultant matches your email",
+            )
+        consultant_id = c_row["id"]
+
+    # Step 4: Create presentation + product associations
+    product_items = [
+        {"product_code": s["product_code"], "quantity": s["quantity"]}
+        for s in selections
+    ]
+
+    async with get_pool().acquire() as conn:
+        async with conn.transaction():
+            row = await conn.fetchrow(
+                """INSERT INTO presentations
+                   (client_name, office_address, suite_number, sq_ft, consultant_id, product_count)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
+                body.client_name,
+                body.office_address,
+                body.suite_number,
+                body.sq_ft,
+                consultant_id,
+                len(product_items),
+            )
+
+            for item in product_items:
+                await conn.execute(
+                    """INSERT INTO presentation_products (presentation_id, product_code, quantity)
+                       VALUES ($1, $2, $3)""",
+                    row["id"],
+                    item["product_code"],
+                    item["quantity"],
+                )
+
+    # Step 5: Generate PPTX
+    presentation_id = row["id"]
+    try:
+        await generate_presentation(presentation_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Re-fetch updated record
     updated = await fetch_one(
         """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
            FROM presentations WHERE id = $1""",

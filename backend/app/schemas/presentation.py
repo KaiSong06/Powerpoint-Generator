@@ -40,6 +40,15 @@ class AutoSelectRequest(BaseModel):
     spaces: list[SpaceRequest] = Field(..., min_length=1)
 
 
+class GenerateFromBriefRequest(BaseModel):
+    brief: str = Field(..., min_length=10, max_length=5000)
+    client_name: str
+    office_address: str
+    suite_number: str | None = None
+    sq_ft: int = Field(..., ge=1)
+    consultant_id: int | None = None
+
+
 class PresentationCreate(BaseModel):
     client_name: str
     office_address: str

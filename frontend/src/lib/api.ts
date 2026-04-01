@@ -167,3 +167,21 @@ export async function generatePresentation(data: {
 
   return response.json() as Promise<Presentation>;
 }
+
+/**
+ * Generate a presentation from a natural-language brief.
+ * The backend uses AI to parse the brief into spaces, then auto-selects products.
+ */
+export async function generateFromBrief(data: {
+  brief: string;
+  client_name: string;
+  office_address: string;
+  suite_number?: string;
+  sq_ft: number;
+  consultant_id: number;
+}): Promise<Presentation> {
+  return apiFetch<Presentation>("/api/presentations/generate-from-brief", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
