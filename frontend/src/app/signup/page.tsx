@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { createProfile } from "@/lib/api";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -27,26 +28,38 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name.trim(),
-          phone: phone.trim() || null,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone.trim() || null,
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
-      setIsSubmitting(false);
-    } else if (data.session) {
-      // Email confirmation disabled — user is logged in, go to home
-      router.push("/");
-    } else {
-      // Email confirmation required — show message
-      setSuccess(true);
+      if (error) {
+        setError(error.message);
+        setIsSubmitting(false);
+      } else if (data.session) {
+        // Session available — create profile immediately with the info they just entered
+        try {
+          await createProfile({
+            name: name.trim(),
+            phone: phone.trim() || undefined,
+          });
+        } catch {
+          // Profile creation failed — they'll be redirected to /complete-profile as fallback
+        }
+        router.push("/");
+      } else {
+        setSuccess(true);
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Signup failed unexpectedly");
       setIsSubmitting(false);
     }
   };

@@ -3,16 +3,18 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { Presentation } from "@/lib/types";
-import { getDownloadUrl } from "@/lib/api";
+import { getDownloadUrl, deletePresentation } from "@/lib/api";
 
 interface PresentationListProps {
   presentations: Presentation[];
+  onDelete: (id: number) => void;
 }
 
 type SortOrder = "newest" | "oldest";
 
 export default function PresentationList({
   presentations,
+  onDelete,
 }: PresentationListProps) {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
@@ -83,7 +85,7 @@ export default function PresentationList({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => (
-            <PresentationCard key={p.id} presentation={p} />
+            <PresentationCard key={p.id} presentation={p} onDelete={onDelete} />
           ))}
         </div>
       )}
@@ -91,8 +93,17 @@ export default function PresentationList({
   );
 }
 
-function PresentationCard({ presentation }: { presentation: Presentation }) {
+function PresentationCard({
+  presentation,
+  onDelete,
+}: {
+  presentation: Presentation;
+  onDelete: (id: number) => void;
+}) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const date = presentation.generated_at
     ? new Date(presentation.generated_at).toLocaleDateString("en-US", {
@@ -111,6 +122,19 @@ function PresentationCard({ presentation }: { presentation: Presentation }) {
       // Fail silently on card — user can retry or use detail page
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deletePresentation(presentation.id);
+      onDelete(presentation.id);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete");
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   }
 
@@ -139,7 +163,11 @@ function PresentationCard({ presentation }: { presentation: Presentation }) {
         )}
       </div>
 
-      <div className="flex gap-2">
+      {deleteError && (
+        <p className="text-red-600 text-xs mb-2">{deleteError}</p>
+      )}
+
+      <div className="flex gap-2 items-center">
         <Link
           href={`/presentations/${presentation.id}`}
           className="text-sm text-envirotech-red font-medium hover:underline"
@@ -155,7 +183,44 @@ function PresentationCard({ presentation }: { presentation: Presentation }) {
             {isDownloading ? "Loading..." : "Download"}
           </button>
         )}
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className={`text-sm text-red-500 font-medium hover:underline ${presentation.file_name ? "" : "ml-auto"}`}
+        >
+          Delete
+        </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold text-envirotech-charcoal mb-2">
+              Delete Presentation?
+            </h3>
+            <p className="text-gray-600 text-sm mb-6">
+              This will permanently delete the presentation for{" "}
+              <strong>{presentation.client_name || "this client"}</strong>. This
+              action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

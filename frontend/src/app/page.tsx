@@ -60,7 +60,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <PresentationList presentations={presentations} />
+      <PresentationList
+        presentations={presentations}
+        onDelete={(id) => setPresentations((prev) => prev.filter((p) => p.id !== id))}
+      />
     </div>
   );
 }

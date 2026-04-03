@@ -62,12 +62,18 @@ async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const authHeaders = await getAuthHeaders();
+  const incomingHeaders = (options.headers as Record<string, string>) || {};
+  // Skip getAuthHeaders() if an Authorization header is already provided,
+  // to avoid a redundant supabase.auth.getSession() call that can deadlock
+  // during initial auth setup.
+  const authHeaders = incomingHeaders["Authorization"]
+    ? {}
+    : await getAuthHeaders();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...authHeaders,
-    ...(options.headers as Record<string, string>),
+    ...incomingHeaders,
   };
 
   const response = await fetchWithRetry(`${API_URL}${path}`, {
@@ -210,9 +216,32 @@ export async function generateFromBrief(data: {
   suite_number?: string;
   sq_ft: number;
   budget?: number;
+  floor_plan?: File | null;
 }): Promise<Presentation> {
-  return apiFetch<Presentation>("/api/presentations/generate-from-brief", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const authHeaders = await getAuthHeaders();
+
+  const formData = new FormData();
+  formData.append("brief", data.brief);
+  formData.append("client_name", data.client_name);
+  formData.append("office_address", data.office_address);
+  if (data.suite_number) formData.append("suite_number", data.suite_number);
+  formData.append("sq_ft", String(data.sq_ft));
+  if (data.budget != null) formData.append("budget", String(data.budget));
+  if (data.floor_plan) formData.append("floor_plan", data.floor_plan);
+
+  const response = await fetchWithRetry(
+    `${API_URL}/api/presentations/generate-from-brief`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`API error ${response.status}: ${errorBody}`);
+  }
+
+  return response.json() as Promise<Presentation>;
 }

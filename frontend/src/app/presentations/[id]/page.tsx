@@ -46,6 +46,7 @@ export default function PresentationDetailPage({
     try {
       await deletePresentation(presentation.id);
       router.push("/");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete");
       setIsDeleting(false);
@@ -77,8 +78,8 @@ export default function PresentationDetailPage({
           {error}
         </div>
         <button
-          onClick={() => router.push("/")}
-          className="mt-4 text-envirotech-red font-medium hover:underline"
+          onClick={() => { router.push("/"); router.refresh(); }}
+          className="mt-4 text-envirotech-red font-medium hover:underline inline-block"
         >
           Back to Dashboard
         </button>
@@ -103,7 +104,7 @@ export default function PresentationDetailPage({
   return (
     <div className="max-w-3xl mx-auto">
       <button
-        onClick={() => router.push("/")}
+        onClick={() => { router.push("/"); router.refresh(); }}
         className="text-envirotech-red font-medium hover:underline mb-6 inline-block"
       >
         &larr; Back to Dashboard

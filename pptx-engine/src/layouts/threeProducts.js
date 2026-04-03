@@ -27,7 +27,7 @@ function layoutThreeProducts(slide, products, floorPlanUrl) {
   const cardW = 1.9;
   const cardH = 3.8;
   const startY = 1.0;
-  const positions = [4.2, 6.2, 8.2];
+  const positions = [3.6, 5.6, 7.6];
 
   products.forEach((p, i) => {
     renderProductCard(slide, p, positions[i], startY, cardW, cardH, {

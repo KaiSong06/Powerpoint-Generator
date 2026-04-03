@@ -108,13 +108,19 @@ async def auto_select_endpoint(
 
 @router.post("/generate-from-brief", response_model=PresentationOut, status_code=201)
 async def generate_from_brief_endpoint(
-    body: GenerateFromBriefRequest,
+    client_name: str = Form(...),
+    office_address: str = Form(...),
+    suite_number: str = Form(None),
+    sq_ft: int = Form(...),
+    brief: str = Form(...),
+    budget: float | None = Form(None),
+    floor_plan: UploadFile | None = File(None),
     user: AuthUser = Depends(get_current_user),
 ):
     """Parse a natural language space brief with AI, auto-select products, and generate a PPTX."""
     # Step 1: AI-parse the brief into structured spaces
     try:
-        space_requests = await parse_space_brief(body.brief)
+        space_requests = await parse_space_brief(brief)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except RuntimeError as e:
@@ -125,13 +131,30 @@ async def generate_from_brief_endpoint(
         {"space_type": s.space_type.value, "count": s.count, "capacity": s.capacity}
         for s in space_requests
     ]
-    selections = await match_products(spaces, budget=body.budget)
+    selections = await match_products(spaces, budget=budget)
 
     if not selections:
         raise HTTPException(
             status_code=400,
             detail="No products matched the parsed space breakdown",
         )
+
+    # Upload floor plan if provided
+    floor_plan_url = None
+    if floor_plan and floor_plan.filename:
+        settings = get_settings()
+        file_bytes = await floor_plan.read()
+        ext = floor_plan.filename.rsplit(".", 1)[-1] if "." in floor_plan.filename else "png"
+        storage_path = f"floor_plans/{uuid.uuid4().hex}.{ext}"
+        try:
+            floor_plan_url = await upload_file(
+                settings.storage_bucket,
+                storage_path,
+                file_bytes,
+                floor_plan.content_type or "image/png",
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Floor plan upload failed: {e}")
 
     # Step 3: Create presentation + product associations in a transaction
     product_items = [
@@ -143,15 +166,16 @@ async def generate_from_brief_endpoint(
         async with conn.transaction():
             row = await conn.fetchrow(
                 """INSERT INTO presentations
-                   (client_name, office_address, suite_number, sq_ft, user_id, product_count)
-                   VALUES ($1, $2, $3, $4, $5, $6)
+                   (client_name, office_address, suite_number, sq_ft, user_id, product_count, floor_plan_url)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7)
                    RETURNING id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at""",
-                body.client_name,
-                body.office_address,
-                body.suite_number,
-                body.sq_ft,
+                client_name,
+                office_address,
+                suite_number,
+                sq_ft,
                 user.id,
                 len(product_items),
+                floor_plan_url,
             )
 
             for item in product_items:

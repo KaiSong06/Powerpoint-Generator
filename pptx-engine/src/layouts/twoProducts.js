@@ -29,7 +29,7 @@ function layoutTwoProducts(slide, products, floorPlanUrl) {
   const startY = 1.0;
 
   products.forEach((p, i) => {
-    const x = i === 0 ? 4.5 : 7.3;
+    const x = i === 0 ? 4.2 : 7.0;
     renderProductCard(slide, p, x, startY, cardW, cardH, {
       imgW: 2.4,
       imgH: 2.0,

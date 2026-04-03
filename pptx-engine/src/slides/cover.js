@@ -104,6 +104,7 @@ function generateCover(pres, data) {
     fontSize: 36,
     bold: true,
     valign: "bottom",
+    margin: 0,
   });
   cursorY += clientH + GAP;
 
@@ -116,6 +117,7 @@ function generateCover(pres, data) {
     color: COLORS.TEXT_LIGHT,
     fontFace: FONTS.BODY,
     fontSize: 14,
+    margin: 0,
   });
   cursorY += addressH + GAP;
 
@@ -138,6 +140,7 @@ function generateCover(pres, data) {
     color: COLORS.TEXT_LIGHT,
     fontFace: FONTS.BODY,
     fontSize: 12,
+    margin: 0,
   });
   cursorY += dateH + GAP;
 
@@ -157,6 +160,7 @@ function generateCover(pres, data) {
       y: cursorY,
       w: 4.0,
       h: consultantH,
+      margin: 0,
     }
   );
 

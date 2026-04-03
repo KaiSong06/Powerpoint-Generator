@@ -15,6 +15,7 @@ const COLORS = {
 const FONTS = {
   HEADER: "Arial",
   BODY: "Calibri",
+  TIMES: "Times New Roman",
 };
 
 // ── Slide dimensions (16:9) ─────────────────────────────────────────────────
@@ -23,10 +24,12 @@ const SLIDE = {
   H: 5.625,
 };
 
-// ── Header bar (black bar at top of content slides) ─────────────────────────
+// ── Header bar (compact banner at top-left of content slides) ───────────────
 const HEADER_BAR = {
-  H: 0.55,
-  Y: 0,
+  X: 0.38,
+  Y: 0.06,
+  W: 2.0,
+  H: 0.3,
 };
 
 // ── Logo position (content slides — top-right) ─────────────────────────────
@@ -54,38 +57,39 @@ const DEFAULT_LOGO_PATH = LOGO_DARK_PATH;
 const LOGO_LIGHT_ASPECT = 90 / 344;  // h/w ≈ 0.262
 const LOGO_DARK_ASPECT = 74 / 260;   // h/w ≈ 0.285
 
-// ── Helper: add the black header bar + title + logo ────────────────────────
+// ── Helper: add the compact header banner + title + logo ──────────────────
 function addHeaderBar(slide, logoPath, text) {
-  // Full-width black bar
+  // Compact dark banner behind the title text
   slide.addShape("rect", {
-    x: 0,
+    x: HEADER_BAR.X,
     y: HEADER_BAR.Y,
-    w: SLIDE.W,
+    w: HEADER_BAR.W,
     h: HEADER_BAR.H,
     fill: { color: COLORS.DARK_BG },
   });
 
-  // Header text
+  // Header text (Arial Bold, 12pt)
   slide.addText(text, {
-    x: 0.5,
+    x: HEADER_BAR.X,
     y: HEADER_BAR.Y,
-    w: 7.5,
+    w: HEADER_BAR.W,
     h: HEADER_BAR.H,
     color: COLORS.TEXT_LIGHT,
     fontFace: FONTS.HEADER,
-    fontSize: 18,
+    fontSize: 8,
     bold: true,
     valign: "middle",
+    align: "center",
   });
 
-  // Logo top-right (light variant — sits on dark header bar)
-  const logo = logoPath || LOGO_LIGHT_PATH;
+  // Logo top-right (dark variant — sits on white background)
+  const logo = logoPath || LOGO_DARK_PATH;
   slide.addImage({
     path: logo,
     x: LOGO.X,
     y: LOGO.Y,
     w: LOGO.W,
-    h: LOGO.W * LOGO_LIGHT_ASPECT,
+    h: LOGO.W * LOGO_DARK_ASPECT,
   });
 }
 

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { generateFromBrief } from "@/lib/api";
+
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
+const MAX_SIZE_MB = 10;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const PROGRESS_MESSAGES = [
   "Analyzing your brief...",
@@ -32,6 +36,11 @@ export default function BriefGenerateForm() {
   const [suiteNumber, setSuiteNumber] = useState("");
   const [sqFt, setSqFt] = useState("");
   const [budget, setBudget] = useState("");
+  const [floorPlanFile, setFloorPlanFile] = useState<File | null>(null);
+  const [floorPlanPreview, setFloorPlanPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -39,6 +48,7 @@ export default function BriefGenerateForm() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [progressIdx, setProgressIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Progress message rotation
   useEffect(() => {
@@ -57,6 +67,50 @@ export default function BriefGenerateForm() {
     };
   }, [isGenerating]);
 
+  const validateAndSetFile = useCallback(
+    (file: File) => {
+      setFileError(null);
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        setFileError("Invalid file type. Please upload a PNG, JPG, or PDF file.");
+        return;
+      }
+      if (file.size > MAX_SIZE_BYTES) {
+        setFileError(`File is too large. Maximum size is ${MAX_SIZE_MB}MB.`);
+        return;
+      }
+      if (floorPlanPreview) URL.revokeObjectURL(floorPlanPreview);
+      const preview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+      setFloorPlanFile(file);
+      setFloorPlanPreview(preview);
+    },
+    [floorPlanPreview]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) validateAndSetFile(file);
+    },
+    [validateAndSetFile]
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) validateAndSetFile(file);
+    },
+    [validateAndSetFile]
+  );
+
+  const removeFile = () => {
+    if (floorPlanPreview) URL.revokeObjectURL(floorPlanPreview);
+    setFloorPlanFile(null);
+    setFloorPlanPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   function validate(): string[] {
     const errors: string[] = [];
     if (!brief.trim() || brief.trim().length < 10)
@@ -72,6 +126,7 @@ export default function BriefGenerateForm() {
     const errors = validate();
     if (errors.length > 0) {
       setValidationErrors(errors);
+      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
       return;
     }
     setValidationErrors([]);
@@ -86,6 +141,7 @@ export default function BriefGenerateForm() {
         suite_number: suiteNumber.trim() || undefined,
         sq_ft: Number(sqFt),
         budget: budget.trim() ? Number(budget) : undefined,
+        floor_plan: floorPlanFile,
       });
       router.push(`/presentations/${result.id}`);
     } catch (err) {
@@ -120,6 +176,7 @@ export default function BriefGenerateForm() {
       <div className="space-y-4 max-w-3xl">
         {validationErrors.length > 0 && (
           <div
+            ref={errorRef}
             role="alert"
             className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm"
           >
@@ -264,6 +321,102 @@ export default function BriefGenerateForm() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Floor plan upload */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-envirotech-charcoal mb-2">
+            Floor Plan
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Upload a floor plan image to include in the presentation. This step
+            is optional.
+          </p>
+
+          {fileError && (
+            <div
+              role="alert"
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm"
+            >
+              {fileError}
+            </div>
+          )}
+
+          {floorPlanFile ? (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start gap-4">
+                {floorPlanPreview ? (
+                  <img
+                    src={floorPlanPreview}
+                    alt="Floor plan preview"
+                    className="max-h-48 rounded border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-48 h-36 bg-gray-50 border border-gray-100 rounded flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">PDF File</span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-envirotech-charcoal">
+                    {floorPlanFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(floorPlanFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <button
+                    onClick={removeFile}
+                    className="mt-3 text-sm text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                isDragging
+                  ? "border-envirotech-red bg-red-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <svg
+                className="mx-auto w-12 h-12 text-gray-400 mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-sm font-medium text-gray-700">
+                Drag and drop your floor plan here
+              </p>
+              <p className="text-xs text-gray-500 mt-1">or click to browse</p>
+              <p className="text-xs text-gray-400 mt-3">
+                PNG, JPG, or PDF up to {MAX_SIZE_MB}MB
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.pdf"
+                onChange={handleFileChange}
+                aria-label="Upload floor plan"
+                className="hidden"
+              />
+            </div>
+          )}
         </div>
 
         <button

@@ -101,9 +101,14 @@ async def generate_presentation(presentation_id: int) -> str:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate(
-        json.dumps(payload, default=_decimal_default).encode()
-    )
+    try:
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(json.dumps(payload, default=_decimal_default).encode()),
+            timeout=120,
+        )
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("PPTX engine timed out after 120 seconds")
 
     if proc.returncode != 0:
         # Clean up temp file on failure

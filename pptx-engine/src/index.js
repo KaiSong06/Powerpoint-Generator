@@ -111,20 +111,24 @@ async function resolveImages(payload) {
     return localPath;
   }
 
-  // Resolve product images
-  for (const p of payload.products) {
-    p.image_url = await resolveUrl(p.image_url);
-  }
+  // Resolve all images in parallel
+  const downloads = payload.products.map((p) =>
+    resolveUrl(p.image_url).then((local) => { p.image_url = local; })
+  );
 
-  // Resolve floor plan
   if (payload.floorPlanUrl) {
-    payload.floorPlanUrl = await resolveUrl(payload.floorPlanUrl);
+    downloads.push(
+      resolveUrl(payload.floorPlanUrl).then((local) => { payload.floorPlanUrl = local; })
+    );
   }
 
-  // Resolve cover image
   if (payload.coverImagePath) {
-    payload.coverImagePath = await resolveUrl(payload.coverImagePath);
+    downloads.push(
+      resolveUrl(payload.coverImagePath).then((local) => { payload.coverImagePath = local; })
+    );
   }
+
+  await Promise.all(downloads);
 
   return tempFiles;
 }

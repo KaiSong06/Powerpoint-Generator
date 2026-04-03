@@ -31,7 +31,7 @@ const TABLE_BOTTOM_PAD = 0.5;
 const MAX_ROWS_PER_SLIDE = 9;
 
 // ── Layout constants ───────────────────────────────────────────────────────
-const LEFT_X = 0.5;
+const LEFT_X = 0.38;
 const LEFT_W = 4.2;          // width of left column content area
 const GAP = 0.08;            // small vertical gap between elements
 const BOTTOM_MARGIN = 0.35;  // footer area
@@ -130,9 +130,10 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: 2.0,
     h: summaryH,
     color: COLORS.TEXT_DARK,
-    fontFace: FONTS.BODY,
+    fontFace: FONTS.HEADER,
     fontSize: 12,
     bold: true,
+    margin: 0,
   });
 
   // Thin red underline below "Project Summary"
@@ -154,9 +155,9 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: LEFT_W,
     h: addrH,
     color: COLORS.TEXT_DARK,
-    fontFace: FONTS.HEADER,
+    fontFace: FONTS.TIMES,
     fontSize: addrFontSize,
-    bold: true,
+    margin: 0,
   });
   cursorY += addrH + GAP;
 
@@ -170,6 +171,8 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     color: COLORS.TEXT_DARK,
     fontFace: FONTS.HEADER,
     fontSize: 18,
+    bold: true,
+    margin: 0,
   });
   cursorY += suiteH + GAP * 2;
 
@@ -192,9 +195,10 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: costW,
     h: labelH,
     color: COLORS.PRIMARY_RED,
-    fontFace: FONTS.BODY,
+    fontFace: FONTS.HEADER,
     fontSize: 10,
     bold: true,
+    margin: 0,
   });
 
   slide.addText("SQ FT COST", {
@@ -203,7 +207,7 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: sqftW,
     h: labelH,
     color: COLORS.PRIMARY_RED,
-    fontFace: FONTS.BODY,
+    fontFace: FONTS.HEADER,
     fontSize: 10,
     bold: true,
   });
@@ -216,9 +220,10 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: costW,
     h: dollarH,
     color: COLORS.TEXT_DARK,
-    fontFace: FONTS.HEADER,
+    fontFace: FONTS.TIMES,
     fontSize: dollarFontSize,
     bold: true,
+    margin: 0,
   });
 
   slide.addText(sqftStr, {
@@ -227,7 +232,7 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     w: sqftW,
     h: dollarH,
     color: COLORS.TEXT_DARK,
-    fontFace: FONTS.HEADER,
+    fontFace: FONTS.TIMES,
     fontSize: dollarFontSize,
     bold: true,
   });
@@ -243,6 +248,7 @@ function buildPricingSlide(pres, data, rows, pageIndex, totalPages) {
     color: "777777",
     fontFace: FONTS.BODY,
     fontSize: 9,
+    margin: 0,
   });
 
   slide.addText("PER SQ FT", {
