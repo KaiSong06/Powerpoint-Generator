@@ -27,14 +27,16 @@ router = APIRouter(prefix="/api/presentations", tags=["presentations"])
 async def list_presentations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    _user: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
     offset = (page - 1) * per_page
     rows = await fetch_all(
         """SELECT id, file_url, file_name, client_name, office_address, product_count, sq_ft, generated_at
            FROM presentations
+           WHERE user_id = $1
            ORDER BY generated_at DESC NULLS LAST
-           LIMIT $1 OFFSET $2""",
+           LIMIT $2 OFFSET $3""",
+        user.id,
         per_page,
         offset,
     )
@@ -204,12 +206,13 @@ async def generate_from_brief_endpoint(
 
 
 @router.get("/{presentation_id}", response_model=PresentationDetail)
-async def get_presentation(presentation_id: int, _user: AuthUser = Depends(get_current_user)):
+async def get_presentation(presentation_id: int, user: AuthUser = Depends(get_current_user)):
     row = await fetch_one(
         """SELECT id, file_url, file_name, client_name, office_address, product_count,
                   sq_ft, generated_at, suite_number, floor_plan_url, user_id
-           FROM presentations WHERE id = $1""",
+           FROM presentations WHERE id = $1 AND user_id = $2""",
         presentation_id,
+        user.id,
     )
     if not row:
         raise HTTPException(status_code=404, detail="Presentation not found")
@@ -338,12 +341,13 @@ async def generate_presentation_endpoint(
 @router.get("/{presentation_id}/download")
 async def download_presentation(
     presentation_id: int,
-    _user: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user),
 ):
     """Generate a time-limited signed URL for downloading the PPTX file."""
     row = await fetch_one(
-        "SELECT file_url FROM presentations WHERE id = $1",
+        "SELECT file_url FROM presentations WHERE id = $1 AND user_id = $2",
         presentation_id,
+        user.id,
     )
     if not row:
         raise HTTPException(status_code=404, detail="Presentation not found")
@@ -358,10 +362,11 @@ async def download_presentation(
 
 
 @router.delete("/{presentation_id}", status_code=204)
-async def delete_presentation(presentation_id: int, _user: AuthUser = Depends(get_current_user)):
+async def delete_presentation(presentation_id: int, user: AuthUser = Depends(get_current_user)):
     result = await execute(
-        "DELETE FROM presentations WHERE id = $1",
+        "DELETE FROM presentations WHERE id = $1 AND user_id = $2",
         presentation_id,
+        user.id,
     )
     # asyncpg returns "DELETE N" where N is rows affected
     if result == "DELETE 0":
