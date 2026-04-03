@@ -14,7 +14,7 @@ interface ProductSelectStepProps {
 
 function getDisplayPrice(product: Product): number {
   const markup = product.markup_percent ?? 0;
-  return product.price * (1 + markup / 100);
+  return Math.round(product.price * (1 + markup / 100) * 100) / 100;
 }
 
 export default function ProductSelectStep({

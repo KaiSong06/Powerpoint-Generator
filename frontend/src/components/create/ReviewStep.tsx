@@ -27,7 +27,7 @@ export default function ReviewStep({ data }: ReviewStepProps) {
 
   const totalCost = data.selectedProducts.reduce((sum, sp) => {
     const markup = sp.product.markup_percent || 0;
-    const markedUp = sp.product.price * (1 + markup / 100);
+    const markedUp = Math.round(sp.product.price * (1 + markup / 100) * 100) / 100;
     return sum + markedUp * sp.quantity;
   }, 0);
 
@@ -170,7 +170,7 @@ export default function ReviewStep({ data }: ReviewStepProps) {
               <tbody>
                 {data.selectedProducts.map((sp, i) => {
                   const markup = sp.product.markup_percent || 0;
-                  const unitPrice = sp.product.price * (1 + markup / 100);
+                  const unitPrice = Math.round(sp.product.price * (1 + markup / 100) * 100) / 100;
                   const extended = unitPrice * sp.quantity;
                   return (
                     <tr
