@@ -19,9 +19,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Envirotech PPTX API", lifespan=lifespan)
 
 settings = get_settings()
+
+_origins = [settings.frontend_url]
+if settings.extra_cors_origins:
+    _origins.extend(o.strip() for o in settings.extra_cors_origins.split(",") if o.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
+    allow_origin_regex=r"https://powerpoint-generator.*-kaisong06s-projects\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -78,16 +78,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsLoading(false);
-
-      if (!session && !PROFILE_EXEMPT_PATHS.includes(window.location.pathname)) {
-        router.push("/login");
-      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
   }, [supabase, router]);
+
+  // Redirect to login if not authenticated and not on a public page
+  useEffect(() => {
+    if (isLoading) return;
+    if (user) return;
+    if (PROFILE_EXEMPT_PATHS.includes(pathname)) return;
+    router.push("/login");
+  }, [isLoading, user, pathname, router]);
 
   // Redirect to complete-profile if logged in but no profile
   useEffect(() => {
