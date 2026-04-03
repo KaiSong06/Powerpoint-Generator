@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { createProfile } from "@/lib/api";
 
 export default function CompleteProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, refreshProfile } = useAuth();
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,6 +45,12 @@ export default function CompleteProfilePage() {
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create profile";
+      if (message.includes("409")) {
+        // Profile already exists — refresh and go to dashboard
+        await refreshProfile();
+        router.push("/");
+        return;
+      }
       setError(message);
       setIsSubmitting(false);
     }

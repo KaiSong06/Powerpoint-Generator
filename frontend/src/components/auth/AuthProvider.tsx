@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
 
       if (session?.user) {
+        // Reset profileChecked so the complete-profile redirect waits
+        // for the fresh fetch (profileChecked may be stale from sign-out)
+        setProfileChecked(false);
         fetchProfile(session.access_token);
       } else {
         setProfile(null);
