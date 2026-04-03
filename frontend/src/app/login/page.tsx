@@ -28,7 +28,6 @@ export default function LoginPage() {
       setIsSubmitting(false);
     } else {
       router.push("/");
-      router.refresh();
     }
   };
 

@@ -29,7 +29,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-// Pages that don't require a profile
+// Pages that don't require authentication or a profile
 const PROFILE_EXEMPT_PATHS = ["/login", "/signup", "/complete-profile"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileChecked, setProfileChecked] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createSupabaseBrowserClient();
@@ -45,39 +46,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const p = await getProfile(accessToken);
       setProfile(p);
+      setProfileChecked(true);
       return p;
     } catch {
-      // Non-404 error (network, 401, CORS, etc.)
-      // Don't clear an existing profile — the API call failed, not the profile
+      // Network/server error — don't mark as checked so we don't
+      // wrongly redirect to /complete-profile
       return profile;
     }
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
 
       if (session?.user) {
-        await fetchProfile(session.access_token);
+        // Fire-and-forget: profile loads in the background
+        fetchProfile(session.access_token);
+      } else {
+        setProfileChecked(true);
       }
-
-      setIsLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
 
       if (session?.user) {
-        await fetchProfile(session.access_token);
+        fetchProfile(session.access_token);
       } else {
         setProfile(null);
+        setProfileChecked(true);
       }
-
-      setIsLoading(false);
     });
 
     return () => {
@@ -93,16 +97,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }, [isLoading, user, pathname, router]);
 
-  // Redirect to complete-profile if logged in but no profile
+  // Redirect to complete-profile if logged in but profile doesn't exist
   useEffect(() => {
     if (isLoading) return;
     if (!user) return;
+    if (!profileChecked) return;
     if (PROFILE_EXEMPT_PATHS.includes(pathname)) return;
 
     if (!profile) {
       router.push("/complete-profile");
     }
-  }, [isLoading, user, profile, pathname, router]);
+  }, [isLoading, user, profile, profileChecked, pathname, router]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
