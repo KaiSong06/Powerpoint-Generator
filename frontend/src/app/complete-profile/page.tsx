@@ -41,8 +41,8 @@ export default function CompleteProfilePage() {
         name: name.trim(),
         phone: phone.trim() || undefined,
       });
+      await refreshProfile();
       router.push("/");
-      router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create profile";
       if (message.includes("409")) {
