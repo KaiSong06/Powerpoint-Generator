@@ -3,14 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-import { createProfile } from "@/lib/api";
 import Link from "next/link";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,38 +18,18 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) {
-      setError("Full name is required");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            name: name.trim(),
-            phone: phone.trim() || null,
-          },
-        },
       });
 
       if (error) {
         setError(error.message);
         setIsSubmitting(false);
       } else if (data.session) {
-        // Session available — create profile immediately with the info they just entered
-        try {
-          await createProfile({
-            name: name.trim(),
-            phone: phone.trim() || undefined,
-          });
-        } catch {
-          // Profile creation failed — they'll be redirected to /complete-profile as fallback
-        }
         router.push("/");
       } else {
         setSuccess(true);
@@ -95,23 +72,6 @@ export default function SignupPage() {
             )}
             <div>
               <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Jane Smith"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
@@ -141,22 +101,6 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="555-0100"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-envirotech-red focus:border-transparent"
               />
             </div>
